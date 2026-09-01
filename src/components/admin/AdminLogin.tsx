@@ -9,8 +9,8 @@ interface AdminLoginProps {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToHome }) => {
   const { loginAdmin } = useRegistration();
-  const [email, setEmail] = useState('admin@vardhaman.org');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('blockchain@vardhaman.org');
+  const [password, setPassword] = useState('blocknova2028');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,7 +25,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
       setError(null);
       onLoginSuccess();
     } else {
-      setError('Invalid admin credentials. Use demo passcode "blocknova2026" or "admin123".');
+      setError('Invalid admin credentials. Use demo passcode');
     }
   };
 
