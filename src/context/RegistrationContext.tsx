@@ -219,10 +219,11 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (firestoreRegistrations && firestoreRegistrations.length > 0) {
           setRegistrations((prevLocal) => {
             const combinedMap = new Map<string, RegistrationData>();
+            INITIAL_REGISTRATIONS.forEach((r) => combinedMap.set(r.registrationId, r));
             prevLocal.forEach((r) => combinedMap.set(r.registrationId, r));
             firestoreRegistrations.forEach((r) => combinedMap.set(r.registrationId, r));
             const merged = Array.from(combinedMap.values()).sort(
-              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
             );
             return merged;
           });
@@ -601,7 +602,10 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Save directly to Firebase Firestore
     try {
       setIsFirebaseSyncing(true);
-      await saveRegistrationToFirestore(newRegistration);
+      const res = await saveRegistrationToFirestore(newRegistration);
+      if (!res.success) {
+        console.warn('Firestore save warning:', res.error);
+      }
     } catch (fbError) {
       console.warn('Firebase save error (saved locally):', fbError);
     } finally {

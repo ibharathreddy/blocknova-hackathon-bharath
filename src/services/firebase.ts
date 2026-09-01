@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import {
+  initializeFirestore,
   getFirestore,
   collection,
   doc,
@@ -40,8 +41,16 @@ const firebaseConfig = {
 // Initialize Firebase safely
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore
-export const db: Firestore = getFirestore(app);
+// Initialize Firestore safely with ignoreUndefinedProperties enabled
+export const db: Firestore = (() => {
+  try {
+    return initializeFirestore(app, {
+      ignoreUndefinedProperties: true
+    });
+  } catch {
+    return getFirestore(app);
+  }
+})();
 
 // Initialize Authentication
 export const auth: Auth = getAuth(app);
@@ -59,6 +68,31 @@ if (typeof window !== 'undefined') {
 }
 
 // -------------------------------------------------------------
+// FIRESTORE DATA SANITIZATION HELPER
+// -------------------------------------------------------------
+/**
+ * Recursively removes undefined keys and ensures clean JSON-compatible data for Firestore.
+ */
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as any;
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeForFirestore(item)) as any;
+  }
+  if (typeof data === 'object') {
+    const sanitized: Record<string, any> = {};
+    for (const [key, val] of Object.entries(data)) {
+      if (val !== undefined) {
+        sanitized[key] = sanitizeForFirestore(val);
+      }
+    }
+    return sanitized as any;
+  }
+  return data;
+}
+
+// -------------------------------------------------------------
 // FIRESTORE REGISTRATION OPERATIONS
 // -------------------------------------------------------------
 const REGISTRATIONS_COLLECTION = 'registrations';
@@ -68,8 +102,13 @@ const REGISTRATIONS_COLLECTION = 'registrations';
  */
 export async function saveRegistrationToFirestore(registration: RegistrationData): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!registration || !registration.registrationId) {
+      throw new Error('Invalid registration data: missing registrationId');
+    }
+    const sanitizedData = sanitizeForFirestore(registration);
     const docRef = doc(db, REGISTRATIONS_COLLECTION, registration.registrationId);
-    await setDoc(docRef, registration, { merge: true });
+    await setDoc(docRef, sanitizedData, { merge: true });
+    console.log(`[Firestore] Successfully saved registration ${registration.registrationId} to cloud database.`);
     return { success: true };
   } catch (error: any) {
     console.error('Error saving registration to Firestore:', error);
@@ -86,8 +125,14 @@ export async function saveRegistrationToFirestore(registration: RegistrationData
 export async function fetchRegistrationsFromFirestore(): Promise<RegistrationData[]> {
   try {
     const colRef = collection(db, REGISTRATIONS_COLLECTION);
-    const q = query(colRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    let snapshot;
+    try {
+      const q = query(colRef, orderBy('createdAt', 'desc'));
+      snapshot = await getDocs(q);
+    } catch {
+      // Fallback query without orderBy in case of indexing or schema variance
+      snapshot = await getDocs(colRef);
+    }
     const results: RegistrationData[] = [];
     snapshot.forEach((d) => {
       results.push(d.data() as RegistrationData);
@@ -119,8 +164,19 @@ export function subscribeToRegistrationsFirestore(
         onData(items);
       },
       (err) => {
-        console.warn('Firestore real-time subscription error:', err);
-        if (onError) onError(err);
+        console.warn('Firestore real-time subscription query warning, retrying plain collection:', err);
+        // Fallback subscription to collection without ordering query
+        try {
+          return onSnapshot(colRef, (snapshot) => {
+            const items: RegistrationData[] = [];
+            snapshot.forEach((d) => {
+              items.push(d.data() as RegistrationData);
+            });
+            onData(items);
+          });
+        } catch (innerErr: any) {
+          if (onError) onError(innerErr);
+        }
       }
     );
   } catch (err: any) {
@@ -149,7 +205,9 @@ export async function updateRegistrationStatusInFirestore(
     if (reviewer) updateData.reviewedBy = reviewer;
     updateData.reviewedAt = now;
 
-    await updateDoc(docRef, updateData);
+    const sanitizedData = sanitizeForFirestore(updateData);
+    await updateDoc(docRef, sanitizedData);
+    console.log(`[Firestore] Updated registration ${registrationId} status to ${status}`);
     return true;
   } catch (error) {
     console.error(`Error updating registration ${registrationId} in Firestore:`, error);
@@ -164,6 +222,7 @@ export async function deleteRegistrationFromFirestore(registrationId: string): P
   try {
     const docRef = doc(db, REGISTRATIONS_COLLECTION, registrationId);
     await deleteDoc(docRef);
+    console.log(`[Firestore] Deleted registration ${registrationId}`);
     return true;
   } catch (error) {
     console.error(`Error deleting registration ${registrationId} from Firestore:`, error);
@@ -197,7 +256,8 @@ const PS_CONFIG_DOC = 'problem_statements_config';
 export async function savePSConfigToFirestore(config: { isPSReleased?: boolean; problemStatements?: any[] }): Promise<void> {
   try {
     const docRef = doc(db, SYSTEM_CONFIG_COLLECTION, PS_CONFIG_DOC);
-    await setDoc(docRef, config, { merge: true });
+    const sanitized = sanitizeForFirestore(config);
+    await setDoc(docRef, sanitized, { merge: true });
   } catch (error) {
     console.warn('Could not save PS config to Firestore:', error);
   }
