@@ -40,7 +40,7 @@ This document explains what libraries, components, and utilities are used in the
 ---
 
 ### 2.3 Home Page Components
-- **[`HeroSection.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/HeroSection.tsx)**: Main hero landing with headline, key statistics (500+ Innovators, ₹1 Lakh+ Prizes), countdown embed, and registration CTAs.
+- **[`HeroSection.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/HeroSection.tsx)**: Main hero landing with headline, key statistics (500+ Innovators, ₹10,000+ Prizes), countdown embed, and registration CTAs.
 - **[`CountdownTimer.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/CountdownTimer.tsx)**: Calculates real-time countdown to event kickoff on `2026-09-18T09:00:00+05:30`.
 - **[`AboutSection.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/AboutSection.tsx)**: Highlights mission, vision, technical highlights (Algorand Pure Proof-of-Stake, Sub-4.5s finality), and eligibility criteria.
 - **[`EventDetails.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/EventDetails.tsx)**: Tabular specification of hackathon rules, venue specs, and hacker perks.
@@ -88,7 +88,7 @@ The following redundant imports, unrendered components, and dead properties were
 
 ### 3. [`PrizesSection.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/PrizesSection.tsx)
 - **Removed**: Unused Lucide icons (`Medal`, `Award`, `Gift`, `Zap`, `Coins`, `Flame`, `Sparkles`, `Check`), unused data imports (`SPECIAL_TRACK_PRIZES`, `EVENT_CONFIG`), bulleted perks list (`<ul>`), and bottom certificate note footer.
-- **Why**: Simplified prize cards to keep them clean, focused, and displaying strictly the rank, title, and cash prize amounts (`₹50,000`, `₹30,000`, `₹20,000`).
+- **Why**: Simplified prize cards to keep them clean, focused, and displaying strictly the rank, title, and cash prize amounts (`₹5,000`, `₹3,000`, `₹2,000`).
 
 ### 4. [`AboutSection.tsx`](file:///c:/Users/Nikhil/OneDrive/Desktop/projects/ABC/blocknova-hackathon/src/components/home/AboutSection.tsx)
 - **Removed**: Unused import `EVENT_CONFIG`.

@@ -13,10 +13,10 @@ export const EVENT_CONFIG = {
   startDateISO: '2026-09-18T09:00:00+05:30',
   endDateISO: '2026-09-19T18:00:00+05:30',
   registrationDeadlineISO: '2026-09-15T23:59:59+05:30',
-  prizePool: '₹1,00,000+',
-  firstPrize: '₹50,000',
-  secondPrize: '₹30,000',
-  thirdPrize: '₹20,000',
+  prizePool: '₹10,000+',
+  firstPrize: '₹5,000',
+  secondPrize: '₹3,000',
+  thirdPrize: '₹2,000',
   teamSizeRange: '2 – 4 Members',
   minTeamSize: 2,
   maxTeamSize: 4,
@@ -214,45 +214,37 @@ export const PRIZES_DATA = [
   {
     rank: '1st',
     title: 'Grand Champion',
-    amount: '₹50,000',
+    amount: '₹5000',
     color: 'from-amber-400 to-yellow-600',
     border: 'border-yellow-500/50',
     glow: 'shadow-yellow-500/20',
     perks: [
-      '₹50,000 Direct Cash Prize',
-      'Exclusive Algorand Champion Trophy',
-      'Direct fast-track consideration for Algorand Foundation Developer Grants (Up to $10,000)',
-      'VIP Swag Box & Premium Hardware Kits',
+      '₹5000 Direct Cash Prize',
       'Winner Certificate of Merit'
     ]
   },
   {
     rank: '2nd',
     title: 'First Runner Up',
-    amount: '₹30,000',
+    amount: '₹3,000',
     color: 'from-slate-300 to-slate-500',
     border: 'border-slate-400/50',
     glow: 'shadow-slate-400/20',
     perks: [
-      '₹30,000 Direct Cash Prize',
-      'BlockNova Runner-Up Silver Trophy',
-      'Algorand Ecosystem Mentorship Program',
-      'Branded Merchandise & Swag Kits',
+      '₹3,000 Direct Cash Prize',
       'Certificate of Merit'
     ]
   },
   {
     rank: '3rd',
     title: 'Second Runner Up',
-    amount: '₹20,000',
+    amount: '₹2,000',
     color: 'from-amber-600 to-amber-800',
     border: 'border-amber-700/50',
     glow: 'shadow-amber-700/20',
     perks: [
-      '₹20,000 Direct Cash Prize',
+      '₹2,000 Direct Cash Prize',
       'BlockNova Bronze Trophy',
-      'Cloud & Dev Tooling Credits',
-      'Official Swag Backpacks',
       'Certificate of Merit'
     ]
   }

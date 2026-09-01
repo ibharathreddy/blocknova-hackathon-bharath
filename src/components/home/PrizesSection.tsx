@@ -17,7 +17,7 @@ export const PrizesSection: React.FC = () => {
             <span>REWARDS & RECOGNITION</span>
           </div>
           <h2 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-4">
-            Compete for <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">₹1,00,000+</span> in Prizes
+            Compete for <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">₹10,000+</span> in Prizes
           </h2>
           <p className="text-slate-400 text-base sm:text-lg">
             Direct cash prizes for winning teams.

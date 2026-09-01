@@ -36,8 +36,8 @@ export const AboutSection: React.FC = () => {
     },
     {
       icon: Coins,
-      title: '₹1 Lakh+ Cash & Grants',
-      description: 'Compete for ₹1,00,000+ in direct cash prizes, plus access to Algorand developer grants.',
+      title: '₹10,000 Cash & Grants',
+      description: 'Compete for ₹10,000+ in direct cash prizes, plus access to Algorand developer grants.',
       color: 'text-amber-400',
       bg: 'bg-amber-950/40 border-amber-800/40'
     },

@@ -4,7 +4,7 @@ Official website for **BlockNova Hackathon 2026**, organized by the **Algorand B
 
 📅 **Event Dates**: September 18–19, 2026 (48-Hour Non-Stop Hackathon)  
 📍 **Venue**: Vardhaman College of Engineering, Kacharam, Shamshabad, Hyderabad  
-🏆 **Prize Pool**: ₹1,00,000+ in Cash & Grants  
+🏆 **Prize Pool**: ₹10,000+ in Cash & Grants  
 
 ---
 

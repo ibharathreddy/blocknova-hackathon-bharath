@@ -68,7 +68,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 border border-amber-500/30 backdrop-blur-sm text-amber-300 shadow-sm">
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span className="font-bold">₹1,00,000+ Prize Pool</span>
+            <span className="font-bold">₹10,000+ Prize Pool</span>
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           <div className="glass-card rounded-2xl p-4 sm:p-5 text-center border border-amber-500/20">
-            <div className="font-display font-black text-2xl sm:text-3xl text-amber-400 mb-1">₹1 Lakh+</div>
+            <div className="font-display font-black text-2xl sm:text-3xl text-amber-400 mb-1">₹10,000+</div>
             <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">Total Cash & Bounties</div>
           </div>
 

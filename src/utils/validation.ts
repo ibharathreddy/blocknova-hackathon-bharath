@@ -164,8 +164,8 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     doc.setFontSize(8);
     doc.text('1. Please carry this pass and your official college student ID card during on-campus check-in.', 20, y + 14);
     doc.text('2. Venue: Vardhaman College of Engineering, Kacharam, Shamshabad, Hyderabad - 501218.', 20, y + 20);
-    doc.text('3. Reporting Time: Sep 18, 2026 at 08:00 AM IST. Breakfast & badge pickup starts at 08:30 AM.', 20, y + 26);
-    doc.text('4. For queries, contact Algorand Blockchain Club at blocknova@vardhaman.org or +91 98765 43210.', 20, y + 32);
+    doc.text('3. Reporting Time: Sep 18, 2026 at 09:00 AM IST.', 20, y + 26);
+    doc.text('4. For queries, contact Algorand Blockchain Club at indlabharath999@gmail.com or +91 7997885525.', 20, y + 32);
 
     // Save PDF
     doc.save(`BlockNova_Registration_${registration.registrationId}_${registration.teamName.replace(/\s+/g, '_')}.pdf`);
