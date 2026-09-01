@@ -44,8 +44,8 @@ export const INITIAL_REGISTRATIONS: RegistrationData[] = [
         email: 'nikhil.v@vardhaman.org'
       }
     ],
-    problemStatementId: 'PS-01',
-    projectIdea: 'Developing an automated carbon footprint tracking oracle coupled with Algorand smart contracts for green campus audits.',
+    problemStatementId: 'SEP-01',
+    projectIdea: 'Developing an AI-driven cold outreach generator with instant x402 Algorand micro-settlement.',
     createdAt: '2026-08-25T10:15:00Z',
     updatedAt: '2026-08-26T14:20:00Z',
     reviewedBy: 'admin_super_01',
@@ -87,8 +87,8 @@ export const INITIAL_REGISTRATIONS: RegistrationData[] = [
         email: 'harika.m@cbit.ac.in'
       }
     ],
-    problemStatementId: 'PS-02',
-    projectIdea: 'AST-based static analyzer augmented by fine-tuned LLMs to detect reentrancy and integer overflow in PyTeal/Solidity.',
+    problemStatementId: 'SEP-02',
+    projectIdea: 'Viral meme generator with Gen Z and sarcastic tone models monetized over Algorand micropayments.',
     createdAt: '2026-08-27T11:45:00Z',
     updatedAt: '2026-08-27T11:45:00Z'
   },
@@ -135,8 +135,8 @@ export const INITIAL_REGISTRATIONS: RegistrationData[] = [
         email: 'divya.reddy@vnrvjiet.in'
       }
     ],
-    problemStatementId: 'PS-04',
-    projectIdea: 'Zero-Knowledge academic credential issuance and verification portal with instant mobile QR scanning.',
+    problemStatementId: 'CEP-01',
+    projectIdea: 'Immutable blockchain audit trail linking real-time enterprise API response packets with on-chain receipts.',
     createdAt: '2026-08-28T09:30:00Z',
     updatedAt: '2026-08-29T10:00:00Z',
     reviewedBy: 'admin_super_01',
@@ -170,8 +170,8 @@ export const INITIAL_REGISTRATIONS: RegistrationData[] = [
         email: 'sumanth.g@vardhaman.org'
       }
     ],
-    problemStatementId: 'PS-03',
-    projectIdea: 'Decentralized reputation-based micro-lending pool for college student projects.',
+    problemStatementId: 'SEP-03',
+    projectIdea: 'Automated transcript parsing into assigned action items with pay-per-meeting x402 gateway.',
     createdAt: '2026-08-29T15:00:00Z',
     updatedAt: '2026-08-29T15:00:00Z'
   },
@@ -202,7 +202,7 @@ export const INITIAL_REGISTRATIONS: RegistrationData[] = [
         email: 'test@invalid.domain'
       }
     ],
-    problemStatementId: 'PS-05',
+    problemStatementId: 'CEP-02',
     projectIdea: 'Incomplete project description and invalid member contact details.',
     createdAt: '2026-08-29T16:20:00Z',
     updatedAt: '2026-08-29T17:00:00Z',

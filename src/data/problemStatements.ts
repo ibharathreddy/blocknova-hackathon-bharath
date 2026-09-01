@@ -1,153 +1,179 @@
 import { ProblemStatement } from '../types';
 
 export const PROBLEM_STATEMENTS: ProblemStatement[] = [
+  // -------------------------------------------------------------
+  // Standard Entry Projects
+  // -------------------------------------------------------------
   {
-    psId: 'PS-01',
-    title: 'Algorand Carbon Credit Verification & Micro-Offsetting dApp',
-    category: 'Blockchain',
-    shortDescription: 'Build a decentralized platform on Algorand to tokenize, verify, and trade real-time carbon offsets for green enterprises.',
-    fullDescription: 'Traditional carbon credit markets suffer from double-counting, lack of transparency, high intermediary brokerage fees, and delayed settlement. Algorand’s carbon-negative Layer-1 blockchain provides the ideal substrate for instant finality and micro-transactions. This problem statement challenges teams to create an automated carbon credit issuance and trading protocol on Algorand Testnet with verified sensor/IoT or oracle data.',
-    expectedOutcome: 'A fully functional dApp featuring ARC-03 / ARC-19 compliant smart contracts (PyTeal / Beaker), a verifiable audit trail for carbon sequestered, an automated minting pipeline, and a micro-offsetting widget for e-commerce checkouts.',
+    psId: 'SEP-01',
+    title: 'Cold Email Personalizer',
+    category: 'Standard Entry Projects',
+    trackType: 'Standard',
+    shortDescription: 'Create an AI-powered service that generates personalized outreach emails from structured lead info with pay-per-use x402 Algorand micropayments.',
+    fullDescription: 'Create an AI-powered service that generates personalized outreach emails from structured lead information such as company details, job roles, and customer profiles. Each email generation request is processed through an x402-powered API, enabling pay-per-use access via Algorand micropayments.',
+    expectedOutcome: 'A fully functional email generation API and web dashboard integrated with the x402 monetization protocol. The client sends structured lead payloads, the API handles pay-per-call Algorand micropayments, and outputs compelling, personalized email copy.',
     requirements: [
-      'Algorand Smart Contract (PyTeal or AlgoKit) for ASA (Algorand Standard Asset) fractional minting',
-      'Integration with Pera Wallet or Defly Wallet for atomic transactions',
-      'Verifiable telemetry ingestion pipeline (simulated IoT or oracle feed)',
-      'Transparent on-chain ledger explorer and user portfolio dashboard'
+      'AI prompt engineering & LLM integration (Gemini / OpenAI / Claude) for tailored lead messaging',
+      'x402-compliant API endpoint processing pay-per-use requests',
+      'Algorand Testnet wallet integration for automated micropayment transfers',
+      'Interactive web interface for bulk or single lead input with live generation preview'
     ],
     constraints: [
-      'Sub-4.5 second transaction finality adherence on Algorand',
-      'Zero double-claiming architecture using atomic transaction groups',
-      'Responsive, accessible web frontend'
+      'Email generation response time must be under 8 seconds per lead',
+      'Must verify x402 payment header on Algorand before fulfilling email generation request',
+      'Clean handling of invalid lead schemas with informative error messages'
     ],
-    suggestedTech: ['Algorand Python / PyTeal', 'AlgoKit', 'Pera Wallet SDK', 'React', 'TypeScript', 'Tailwind CSS'],
-    evaluationCriteria: 'Smart contract security, mathematical accuracy of tokenized offset logic, UI/UX polish, and business viability.',
+    suggestedTech: ['Algorand SDK / AlgoKit', 'x402 Protocol', 'FastAPI / Node.js', 'React / TypeScript', 'Tailwind CSS', 'Gemini / OpenAI API'],
+    evaluationCriteria: 'Copywriting quality & relevance, seamlessness of the x402 payment handshake, UI experience, and code architecture.',
     isActive: true,
+    isReleased: true,
     order: 1,
-    difficulty: 'Hard'
+    difficulty: 'Medium',
+    maxTeams: 5
   },
   {
-    psId: 'PS-02',
-    title: 'AI-Powered Smart Contract Vulnerability Auditor & Fix Generator',
-    category: 'AI',
-    shortDescription: 'Develop an automated LLM-assisted security engine that scans smart contracts for reentrancy, integer overflows, and logic bugs.',
-    fullDescription: 'Smart contract exploits result in hundreds of millions in losses annually. Existing static analyzers generate high false-positive rates and lack interactive remediation guidance. This challenge requires building an intelligent code intelligence tool combining AST parsing with specialized LLM embeddings to detect anti-patterns, explain vulnerabilities with PoC test vectors, and generate verified patched code.',
-    expectedOutcome: 'A web-based scanner where developers paste or upload smart contracts (PyTeal, TEAL, Solidity, Rust) to receive a line-by-line security score, automated severity breakdown (Critical, High, Medium, Low), and 1-click suggested refactors.',
+    psId: 'SEP-02',
+    title: 'Meme Caption Engine',
+    category: 'Standard Entry Projects',
+    trackType: 'Standard',
+    shortDescription: 'Build an AI service that generates creative meme captions in multiple humorous styles monetized via x402 Algorand micropayments.',
+    fullDescription: 'Build an AI service that generates creative meme captions in multiple humorous styles, including sarcastic, witty, wholesome, and Gen Z humor. Content creators can pay only for the captions they generate using x402 micropayments.',
+    expectedOutcome: 'A dynamic meme caption generator where creators select or upload meme templates, choose humor styles (sarcastic, witty, wholesome, Gen Z), and pay only for the generated captions via x402 on Algorand.',
     requirements: [
-      'Static analysis and AST token extraction engine',
-      'Fine-tuned AI prompt/reasoning chain for smart contract exploit detection',
-      'Interactive visual code diff showing identified flaw vs remediation',
-      'Automated exportable PDF audit report with verification hash'
+      'Multi-tone humor generation engine supporting sarcastic, witty, wholesome, and Gen Z humor',
+      'x402 paywall middleware requesting micropayment per generation batch',
+      'Algorand wallet support (Pera / Defly) for instant transaction authorization',
+      'Image meme previewer with automatic text overlay and download/export capabilities'
     ],
     constraints: [
-      'Analysis turnaround time must be under 30 seconds for standard contracts',
-      'Must provide reproducible exploit explanations, not just vague text'
+      'Caption generation latency under 5 seconds',
+      'Micropayment cost must reflect pay-per-use model accurately on Algorand',
+      'Content safety filter to prevent harmful or hate speech'
     ],
-    suggestedTech: ['FastAPI / Python', 'LangChain', 'OpenAI / Gemini API', 'React', 'Monaco Editor', 'Tailwind CSS'],
-    evaluationCriteria: 'Precision of detected vulnerabilities, quality of generated patches, and intuitiveness of the developer workbench.',
+    suggestedTech: ['Algorand Python/JS SDK', 'x402 Protocol', 'React', 'HTML5 Canvas', 'Python / Express', 'OpenAI / Gemini API'],
+    evaluationCriteria: 'Humor variety & punchiness, speed of caption generation, smooth x402 payment verification, and visual meme creator UX.',
     isActive: true,
+    isReleased: true,
     order: 2,
-    difficulty: 'Hard'
+    difficulty: 'Easy',
+    maxTeams: 5
   },
   {
-    psId: 'PS-03',
-    title: 'Decentralized Micro-Lending & Credit Scoring on Algorand',
-    category: 'FinTech',
-    shortDescription: 'Create a collateral-efficient DeFi lending protocol leveraging on-chain reputation and zero-knowledge identity proofs.',
-    fullDescription: 'Millions of unbanked students and micro-entrepreneurs lack formal credit histories despite consistent digital cash flows. By synthesizing transaction velocity, ASA token tenure, and zero-knowledge verified academic/business credentials, teams must construct a decentralized micro-lending pool featuring automated yield distribution and dynamic interest tiers.',
-    expectedOutcome: 'A non-custodial peer-to-peer liquidity pool on Algorand where borrowers generate reputation scores, request micro-loans, and lenders earn sustainable APY with automated liquidation safety nets.',
+    psId: 'SEP-03',
+    title: 'Meeting Notes to Action Items',
+    category: 'Standard Entry Projects',
+    trackType: 'Standard',
+    shortDescription: 'Develop an AI-powered application that converts meeting transcripts into structured action items monetized through x402.',
+    fullDescription: 'Develop an AI-powered application that converts meeting transcripts into structured action items by automatically identifying tasks, owners, deadlines, and priorities. Every transcript processing request is monetized through x402.',
+    expectedOutcome: 'An intelligent transcript analyzer that converts raw meeting recordings or transcripts into an organized action plan with owners, milestones, priority tags, and calendar exports, charging users per transcript via x402 micropayments.',
     requirements: [
-      'Algorand State Proofs / Smart Contracts managing pool liquidity and escrow',
-      'Reputation scoring algorithm evaluating multi-factor on-chain metrics',
-      'Borrower request creation, repayment milestones, and automated interest calculation',
-      'Seamless wallet connection and transparent transaction ledger'
+      'Natural Language Processing pipeline extracting tasks, assignee names, deadlines, and priority rankings',
+      'x402 payment verification protecting the transcript extraction API endpoint',
+      'Algorand on-chain settlement for pay-per-transcript processing',
+      'Interactive dashboard to edit, organize, assign, and export action items (CSV, JSON, Trello/Jira schema)'
     ],
     constraints: [
-      'Must handle partial repayments and grace period states gracefully',
-      'Protection against flash loan manipulation and sybil attacks'
+      'Support transcripts up to 10,000 words without timeout errors',
+      'Zero loss of context for multi-speaker conversations',
+      'Instant authorization upon valid Algorand x402 payment'
     ],
-    suggestedTech: ['Algorand PyTeal / Beaker', 'AlgoKit', 'Web3.js / Algorand SDK', 'Chart.js', 'React', 'TypeScript'],
-    evaluationCriteria: 'Mathematical stability of the interest curves, contract robustness, and simplicity for non-crypto users.',
+    suggestedTech: ['Algorand SDK', 'x402 Protocol', 'LangChain / LlamaIndex', 'React', 'TypeScript', 'Tailwind CSS'],
+    evaluationCriteria: 'Entity extraction accuracy (who does what by when), x402 payment flow integration, and usability of the action item manager.',
     isActive: true,
+    isReleased: true,
     order: 3,
-    difficulty: 'Advanced'
+    difficulty: 'Medium',
+    maxTeams: 5
   },
+
+  // -------------------------------------------------------------
+  // Composite Entry Projects
+  // -------------------------------------------------------------
   {
-    psId: 'PS-04',
-    title: 'Zero-Knowledge Academic Credential & Skill Verification System',
-    category: 'Cybersecurity',
-    shortDescription: 'Build a tamper-proof student transcript and degree verification system using Algorand ASAs and ZK-SNARK identity proofs.',
-    fullDescription: 'Educational credential forgery is an escalating global issue, while traditional verification requires weeks of manual correspondence. This project aims to empower universities like Vardhaman College of Engineering to issue cryptographically signed, immutable digital credentials that students can present to employers without revealing extraneous personal details (e.g. proving GPA > 8.0 without revealing exact marksheets).',
-    expectedOutcome: 'An end-to-end portal consisting of: (1) University Issuer Dashboard for bulk credential stamping, (2) Student Identity Vault for storing cryptographic proofs, and (3) Employer Verification Portal for instantaneous QR/link verification.',
+    psId: 'CEP-01',
+    title: 'Payment Logging & Audit Infrastructure',
+    category: 'Composite Entry Projects',
+    trackType: 'Composite',
+    shortDescription: 'Build an infrastructure service that creates immutable audit trails linking API responses with x402 payments and Algorand receipts.',
+    fullDescription: 'Build an infrastructure service that creates immutable audit trails linking every API response with its blockchain transaction receipt with its corresponding x402 payment and Algorand blockchain transaction receipt. The platform should provide transparent logging, compliance support, and debugging capabilities for developers and enterprises.',
+    expectedOutcome: 'An enterprise-ready audit logging platform providing cryptographic proof of API delivery tied to Algorand payment transactions, complete with an intuitive analytics and compliance explorer dashboard.',
     requirements: [
-      'Cryptographic hashing and on-chain anchoring of credential metadata on Algorand',
-      'Zero-knowledge proof generator for selective attribute disclosure',
-      'Instant QR Code scanner for employers and verification partners',
-      'Revocation registry smart contract in case of academic misconduct'
+      'Reverse proxy or logging agent that captures API requests, responses, and x402 headers',
+      'Algorand transaction verifier indexing on-chain receipts against internal request IDs',
+      'Immutable audit trail storage and cryptographic proof generation (Merkle tree / hashing)',
+      'Enterprise admin portal for querying audit logs, filtering transaction receipts, and compliance exports'
     ],
     constraints: [
-      'Zero exposure of sensitive PII (Personally Identifiable Information) on public ledger',
-      'Verification check must execute in < 2 seconds'
+      'Sub-millisecond logging overhead added to upstream API requests',
+      'Resilient storage guaranteeing zero audit log drop during high throughput',
+      'Tamper-evident verification of logs against Algorand blockchain state'
     ],
-    suggestedTech: ['Circom / SnarkJS', 'Algorand SDK', 'TypeScript', 'Node.js', 'React', 'QR Code Engine'],
-    evaluationCriteria: 'Cryptographic soundness, privacy compliance, and usability for institutional administrators.',
+    suggestedTech: ['Algorand Indexer SDK', 'x402 Protocol', 'Go / Node.js / Python', 'TimescaleDB / PostgreSQL', 'React', 'Tailwind CSS'],
+    evaluationCriteria: 'Architecture scalability, audit trail cryptographic integrity, low-latency performance, and enterprise explorer UX.',
     isActive: true,
+    isReleased: true,
     order: 4,
-    difficulty: 'Medium'
+    difficulty: 'Hard',
+    maxTeams: 5
   },
   {
-    psId: 'PS-05',
-    title: 'Decentralized Supply Chain Provenance & Cold-Chain IoT Tracker',
-    category: 'Web3',
-    shortDescription: 'Track pharmaceutical and food perishables with smart contract triggers for temperature and custody violations.',
-    fullDescription: 'Counterfeit drugs and spoiled cold-chain supplies cost lives and billions in annual waste. By coupling simulated or real IoT temperature/GPS telemetry with Algorand smart contracts, this system autonomously records provenance handoffs and triggers automated escrow penalties or quarantine alerts when environmental thresholds are breached.',
-    expectedOutcome: 'A real-time logistics dashboard showing geographical tracking, immutable telemetry logs, custody transfer approvals via multisig, and instant consumer authenticity verification via NFC/QR tags.',
+    psId: 'CEP-02',
+    title: 'x402 Payment Gateway',
+    category: 'Composite Entry Projects',
+    trackType: 'Composite',
+    shortDescription: 'Develop a reusable payment gateway that enables multiple applications to monetize APIs through x402 with route-based pricing.',
+    fullDescription: 'Develop a reusable payment gateway that enables multiple applications to monetize APIs through x402. The gateway should support route-based pricing, merchant wallet management, payment validation, analytics, and seamless integration with both Web2 and Web3 applications.',
+    expectedOutcome: 'A modular, developer-friendly payment gateway middleware and merchant portal allowing API providers to define route pricing (e.g. 0.05 ALGO / route), manage merchant payout wallets, validate transactions, and view real-time revenue analytics.',
     requirements: [
-      'Multi-stakeholder custody workflow (Manufacturer -> Distributor -> Pharmacy -> Consumer)',
-      'Algorand smart contract handling automated penalty slashing upon threshold breach',
-      'Interactive map route visualizer with live sensor telemetry graph',
-      'Public consumer lookup portal for batch recall validation'
+      'Configurable proxy gateway intercepting HTTP requests with dynamic 402 Payment Required responses',
+      'Merchant management console for setting route prices, API keys, and Algorand payout addresses',
+      'Automated transaction validation and confirmation on Algorand Testnet',
+      'Analytics dashboard tracking revenue, volume, top routes, and latency'
     ],
     constraints: [
-      'Optimized on-chain storage to minimize transaction fee overhead',
-      'Resilience against corrupted GPS/telemetry packet spoofing'
+      'Seamless drop-in compatibility for standard REST / GraphQL endpoints',
+      'Robust replay attack prevention and double-spend protection',
+      'Sub-2-second verification and authorization cycle'
     ],
-    suggestedTech: ['Algorand PyTeal', 'Leaflet / Mapbox', 'WebSockets', 'React', 'Tailwind CSS', 'Python'],
-    evaluationCriteria: 'Real-world practicality, smart contract state transitions, and interactive map UX.',
+    suggestedTech: ['Algorand JavaScript / Python SDK', 'x402 Middleware', 'Express / FastAPI / Next.js', 'Redis', 'Chart.js', 'React'],
+    evaluationCriteria: 'Ease of developer integration, gateway security & replay defense, flexibility of pricing models, and merchant analytics UX.',
     isActive: true,
+    isReleased: true,
     order: 5,
-    difficulty: 'Medium'
+    difficulty: 'Advanced',
+    maxTeams: 5
   },
   {
-    psId: 'PS-06',
-    title: 'Open Innovation: Autonomous AI Agents on Blockchain Rails',
-    category: 'Open Innovation',
-    shortDescription: 'Build novel multi-agent systems that autonomously execute micro-payments, negotiate services, or manage decentralized communities.',
-    fullDescription: 'As autonomous AI agents evolve, they require native machine-to-machine financial infrastructure to trade resources, purchase API keys, and contract compute tasks. Algorand’s near-instant finality and minimal transaction fees ($0.001) provide the foundation for agent economies. Teams have open creative license to pioneer the future of AI x Web3.',
-    expectedOutcome: 'An autonomous agent proof-of-concept demonstrating multi-agent negotiation, automated treasury management, predictive trading, or automated DAO governance execution.',
+    psId: 'CEP-03',
+    title: 'Receipt Verification Service',
+    category: 'Composite Entry Projects',
+    trackType: 'Composite',
+    shortDescription: 'Create a verification service that exposes APIs for validating x402 payment receipts and confirming settlement on Algorand.',
+    fullDescription: 'Create a verification service that exposes APIs for validating x402 payment receipts and confirming settlement status on the Algorand blockchain. The service should help applications securely verify completed transactions, prevent fraudulent access, and automate service authorization based on successful payments.',
+    expectedOutcome: 'A high-throughput verification microservice providing REST & WebSocket endpoints for instantaneous confirmation of x402 payment receipts against Algorand blockchain state, preventing replay attacks and authorizing downstream services.',
     requirements: [
-      'Demonstration of at least 2 interacting autonomous agent instances',
-      'On-chain transaction settlement on Algorand Testnet',
-      'Interactive visual dashboard monitoring agent decisions, logs, and token balance changes',
-      'Comprehensive architecture diagram and pitch deck'
+      'High-speed receipt validation engine checking signature, sender, recipient, timestamp, and amount on Algorand',
+      'Anti-fraud and replay mitigation caching used transaction IDs and nonces',
+      'Developer SDK / Client library for 1-line integration into external backend stacks',
+      'Public verification widget / explorer for end-users to check payment receipt validity'
     ],
     constraints: [
-      'Must feature genuine autonomous decision loops, not scripted linear scripts',
-      'Graceful error handling for agent fund limits'
+      'Receipt verification API latency under 500ms',
+      'Strict handling of unconfirmed vs confirmed Algorand transaction states',
+      'Rate-limiting and DDoS resilience for validation endpoints'
     ],
-    suggestedTech: ['LangGraph / AutoGen / CrewAI', 'Algorand Python SDK', 'FastAPI', 'React', 'Tailwind CSS'],
-    evaluationCriteria: 'Originality, depth of AI-blockchain integration, and potential commercial impact.',
+    suggestedTech: ['Algorand SDK & Indexer', 'x402 Protocol', 'TypeScript / Rust / Python', 'Redis / SQLite', 'React', 'Tailwind CSS'],
+    evaluationCriteria: 'Verification correctness, speed & throughput benchmarks, SDK elegance, and fraud defense mechanisms.',
     isActive: true,
+    isReleased: true,
     order: 6,
-    difficulty: 'Advanced'
+    difficulty: 'Hard',
+    maxTeams: 5
   }
 ];
 
 export const CATEGORIES = [
   'All',
-  'Blockchain',
-  'AI',
-  'Cybersecurity',
-  'FinTech',
-  'Web3',
-  'Open Innovation'
+  'Standard Entry Projects',
+  'Composite Entry Projects'
 ] as const;

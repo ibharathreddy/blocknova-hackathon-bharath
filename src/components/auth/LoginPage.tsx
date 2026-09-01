@@ -24,11 +24,19 @@ import {
   Trash2,
   Plus,
   Save,
-  X
+  X,
+  Unlock,
+  Layers,
+  FileText,
+  HelpCircle,
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { downloadRegistrationPassPDF } from '../../utils/validation';
-import { RegistrationData, TeamMember, TeamSize } from '../../types';
+import { RegistrationData, TeamMember, TeamSize, ProblemStatement } from '../../types';
+import { ProblemModal } from '../ui/ProblemModal';
+import { CATEGORIES } from '../../data/problemStatements';
 
 interface LoginPageProps {
   onBackToHome: () => void;
@@ -64,7 +72,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     updateTeamRegistration,
     loginAdmin,
     isAdminAuthenticated,
-    isFirebaseSyncing
+    isFirebaseSyncing,
+    problemStatements,
+    isPSReleased,
+    selectTeamProblemStatement,
+    getPSSelectionStats
   } = useRegistration();
 
   const [activeTab, setActiveTab] = useState<TabType>('leader');
@@ -82,6 +94,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [editTeamSize, setEditTeamSize] = useState<TeamSize>(2);
   const [editMembers, setEditMembers] = useState<TeamMember[]>([]);
   const [isSavingTeam, setIsSavingTeam] = useState(false);
+
+  // Problem Statement Selection & Modal State
+  const [selectedModalProblem, setSelectedModalProblem] = useState<ProblemStatement | null>(null);
+  const [isEnrollingPS, setIsEnrollingPS] = useState(false);
+  const [psCategoryTab, setPsCategoryTab] = useState<string>('All');
 
   // Feedback states
   const [isLoading, setIsLoading] = useState(false);
@@ -159,7 +176,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
     const neededMembersCount = newSize - 1;
     if (editMembers.length < neededMembersCount) {
-      // Add member slots up to needed count
       const additional: TeamMember[] = [];
       for (let i = editMembers.length; i < neededMembersCount; i++) {
         additional.push({
@@ -173,7 +189,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       }
       setEditMembers([...editMembers, ...additional]);
     } else if (editMembers.length > neededMembersCount) {
-      // Slice down to needed count
       setEditMembers(editMembers.slice(0, neededMembersCount));
     }
   };
@@ -222,7 +237,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     if (!loggedInTeam) return;
     clearMessages();
 
-    // Validate Team Size
     if (editTeamSize < 2 || editTeamSize > 4) {
       setErrorMsg('Team size must be between 2 and 4 members (min 1 leader + 1 member, max 1 leader + 3 members).');
       return;
@@ -233,7 +247,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       return;
     }
 
-    // Validate fields
     for (let i = 0; i < editMembers.length; i++) {
       const m = editMembers[i];
       if (!m.name.trim()) {
@@ -277,6 +290,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setIsEditingTeam(false);
     clearMessages();
   };
+
+  // Handle Team Problem Statement Track Enrollment
+  const handleSelectPS = async (psId: string) => {
+    if (!loggedInTeam) return;
+    clearMessages();
+
+    setIsEnrollingPS(true);
+    const res = await selectTeamProblemStatement(loggedInTeam.registrationId, psId);
+    setIsEnrollingPS(false);
+
+    if (res.success) {
+      const psMatch = problemStatements.find(p => p.psId === psId);
+      setSuccessMsg(`🎉 Track selected successfully! Team "${loggedInTeam.teamName}" is now registered for "${psId}: ${psMatch?.title}".`);
+    } else {
+      setErrorMsg(res.error || 'Failed to select problem statement.');
+    }
+  };
+
+  // Filtered Problem Statements in PS Module
+  const displayedProblemStatements = problemStatements.filter(ps => {
+    if (psCategoryTab === 'All') return true;
+    return ps.category === psCategoryTab;
+  });
+
+  const currentSelectedPS = problemStatements.find(p => p.psId === loggedInTeam?.problemStatementId);
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 animate-in fade-in duration-200">
@@ -343,22 +381,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         {/* Global Feedback Banners */}
         {errorMsg && (
-          <div className="max-w-md mx-auto mb-6 p-4 rounded-2xl bg-pink-950/70 border border-pink-700/60 text-pink-200 text-xs flex items-start gap-3 animate-in fade-in">
+          <div className="max-w-xl mx-auto mb-6 p-4 rounded-2xl bg-pink-950/70 border border-pink-700/60 text-pink-200 text-xs flex items-start gap-3 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-pink-400" />
             <div className="flex-1">{errorMsg}</div>
           </div>
         )}
 
         {successMsg && (
-          <div className="max-w-md mx-auto mb-6 p-4 rounded-2xl bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 text-xs flex items-start gap-3 animate-in fade-in">
+          <div className="max-w-xl mx-auto mb-6 p-4 rounded-2xl bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 text-xs flex items-start gap-3 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
             <div className="flex-1">{successMsg}</div>
           </div>
         )}
 
-        {/* LOGGED IN: TEAM LEADER DASHBOARD */}
+        {/* ================================================================ */}
+        {/* LOGGED IN: TEAM LEADER DASHBOARD                                 */}
+        {/* ================================================================ */}
         {loggedInTeam ? (
-          <div className="space-y-6 animate-in fade-in max-w-3xl mx-auto">
+          <div className="space-y-8 animate-in fade-in max-w-3xl mx-auto">
+            
             {/* Top Team Header Card */}
             <div className="p-6 rounded-3xl bg-gradient-to-b from-purple-950/60 to-slate-950/80 border border-purple-500/40 shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -374,6 +415,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       >
                         {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-300">
+                      REGISTERED
                     </span>
                   </div>
 
@@ -410,13 +454,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </div>
             </div>
 
-            {/* Team Leader & Problem Statement Grid */}
+            {/* Team Leader & Current Status Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Team Leader Card */}
               <div className="p-4 rounded-2xl bg-slate-900/80 border border-purple-500/30 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/60">
-                    Team Leader (Logged In)
+                    Team Leader
                   </span>
                   <span className="text-xs font-mono text-slate-400">{loggedInTeam.teamLeader.year}</span>
                 </div>
@@ -433,26 +477,227 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 </div>
               </div>
 
-              {/* Problem Statement Card */}
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">
-                  Track / Problem Statement
-                </span>
-                <h4 className="font-display font-bold text-sm text-white">
-                  {loggedInTeam.problemStatementId ? `Statement ID: ${loggedInTeam.problemStatementId}` : 'Open Innovation Track'}
-                </h4>
-                {loggedInTeam.projectIdea && (
-                  <p className="text-xs text-slate-300 line-clamp-3 italic">
-                    "{loggedInTeam.projectIdea}"
-                  </p>
-                )}
-                <div className="text-[11px] text-slate-400 font-mono pt-2 border-t border-slate-800">
-                  Registered on: {new Date(loggedInTeam.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+              {/* Current Track Summary Card */}
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-cyan-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">
+                    Track Status
+                  </span>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                    isPSReleased ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
+                  }`}>
+                    {isPSReleased ? 'Tracks Released' : 'Tracks Locked'}
+                  </span>
                 </div>
+
+                {isPSReleased ? (
+                  <>
+                    <h4 className="font-display font-bold text-base text-white">
+                      {currentSelectedPS ? `${currentSelectedPS.psId}: ${currentSelectedPS.title}` : (loggedInTeam.problemStatementId || 'Open Track / Not Selected')}
+                    </h4>
+
+                    {currentSelectedPS ? (
+                      <p className="text-xs text-slate-300 line-clamp-2">
+                        {currentSelectedPS.shortDescription}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-400">
+                        No problem statement track chosen yet. Browse and select your team track below.
+                      </p>
+                    )}
+
+                    <div className="text-[11px] text-slate-400 font-mono pt-2 border-t border-slate-800 flex items-center justify-between">
+                      <span>Registered: {new Date(loggedInTeam.createdAt).toLocaleDateString()}</span>
+                      {currentSelectedPS && (
+                        <span className="text-cyan-300 font-semibold">{currentSelectedPS.category}</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-display font-bold text-base text-white">
+                      Phase 1 — Registered Team
+                    </h4>
+                    <p className="text-xs text-slate-300 leading-relaxed font-light">
+                      Problem statement challenges are currently locked by hackathon organizers and will be unlocked for track selection soon.
+                    </p>
+                    <div className="text-[11px] text-slate-400 font-mono pt-2 border-t border-slate-800 flex items-center justify-between">
+                      <span>Registered: {new Date(loggedInTeam.createdAt).toLocaleDateString()}</span>
+                      <span className="text-amber-300">Phase 2 Pending</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* TEAM MEMBERS MANAGEMENT & EDITING SECTION */}
+            {/* ================================================================ */}
+            {/* PROBLEM STATEMENT SELECTION & QUOTA MODULE (Only when Unlocked)  */}
+            {/* ================================================================ */}
+            {isPSReleased && (
+              <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-purple-500/30 shadow-xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="font-display font-black text-xl text-white flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-cyan-400" />
+                      <span>Problem Statement Track Selection</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Select your official hackathon challenge. Each problem statement has a strict team quota.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border bg-emerald-950/80 border-emerald-600 text-emerald-300">
+                      <Unlock className="w-3.5 h-3.5" />
+                      <span>SELECTION OPEN</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Track Category Filter Tabs */}
+                  <div className="flex flex-wrap items-center gap-2 pb-1">
+                    {CATEGORIES.map((cat) => {
+                      const isSel = psCategoryTab === cat;
+                      const count = cat === 'All' 
+                        ? problemStatements.length 
+                        : problemStatements.filter(p => p.category === cat).length;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setPsCategoryTab(cat)}
+                          className={`px-3.5 py-1.5 rounded-xl font-display font-bold text-xs flex items-center gap-1.5 transition-all ${
+                            isSel
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-glow-purple'
+                              : 'bg-slate-950/70 border border-slate-800 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          <span>{cat}</span>
+                          <span className="text-[10px] font-mono opacity-80">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Problem Statements List */}
+                  <div className="space-y-3">
+                    {displayedProblemStatements.map((ps) => {
+                      const stats = getPSSelectionStats(ps.psId);
+                      const isThisSelected = loggedInTeam.problemStatementId === ps.psId;
+                      const isFull = stats.isFull && !isThisSelected;
+
+                      return (
+                        <div 
+                          key={ps.psId}
+                          className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                            isThisSelected
+                              ? 'bg-purple-950/40 border-purple-500/80 ring-1 ring-purple-400 shadow-glow-purple'
+                              : isFull
+                              ? 'bg-slate-950/40 border-slate-800/80 opacity-75'
+                              : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono font-bold text-xs text-cyan-300 bg-cyan-950 border border-cyan-800 px-2 py-0.5 rounded">
+                                  {ps.psId}
+                                </span>
+                                <span className="text-[11px] font-semibold text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/40">
+                                  {ps.category}
+                                </span>
+                                {ps.difficulty && (
+                                  <span className="text-[10px] font-mono text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">
+                                    {ps.difficulty}
+                                  </span>
+                                )}
+
+                                {/* Slot status badge */}
+                                <span className={`text-[11px] font-mono px-2 py-0.5 rounded font-semibold ${
+                                  isThisSelected
+                                    ? 'bg-emerald-950 border border-emerald-600 text-emerald-300'
+                                    : isFull
+                                    ? 'bg-rose-950 border border-rose-800 text-rose-300'
+                                    : 'bg-slate-900 border border-slate-800 text-cyan-300'
+                                }`}>
+                                  {isThisSelected
+                                    ? `✓ Enrolled (${stats.count}/${stats.maxTeams} spots)`
+                                    : isFull
+                                    ? `Cap Reached (${stats.count}/${stats.maxTeams} full)`
+                                    : `${stats.remaining} of ${stats.maxTeams} spots remaining`}
+                                </span>
+                              </div>
+
+                              <h4 className="font-display font-bold text-base text-white">
+                                {ps.title}
+                              </h4>
+                              <p className="text-xs text-slate-300 leading-relaxed font-light">
+                                {ps.shortDescription}
+                              </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0 pt-2 sm:pt-0">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedModalProblem(ps)}
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1 transition-colors"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                                <span>Specs</span>
+                              </button>
+
+                              {isThisSelected ? (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="px-4 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1 cursor-default"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Enrolled</span>
+                                </button>
+                              ) : isFull ? (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="px-4 py-1.5 rounded-xl bg-rose-950/40 border border-rose-900 text-rose-400 text-xs font-mono font-bold cursor-not-allowed opacity-60"
+                                >
+                                  <span>Slots Full</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={isEnrollingPS}
+                                  onClick={() => handleSelectPS(ps.psId)}
+                                  className="px-4 py-1.5 rounded-xl cyber-gradient-btn text-white text-xs font-bold font-display flex items-center gap-1 shadow-glow-purple transition-all"
+                                >
+                                  {isEnrollingPS ? (
+                                    <>
+                                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      <span>Selecting...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>Select Track</span>
+                                      <ArrowRight className="w-3.5 h-3.5" />
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ================================================================ */}
+            {/* TEAM MEMBERS MANAGEMENT & EDITING SECTION                       */}
+            {/* ================================================================ */}
             <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div>
@@ -534,7 +779,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 /* EDITING MODE VIEW */
                 <div className="space-y-6 animate-in fade-in">
-                  {/* Team Size Chooser Bar */}
                   <div className="p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-2">
                     <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
                       Select Team Size (2 to 4 Members Total)
@@ -560,7 +804,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Editable Members List */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
@@ -591,7 +834,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                             <span>Member #{idx + 1}</span>
                           </span>
 
-                          {/* Remove Member Button */}
                           <button
                             type="button"
                             disabled={editTeamSize <= 2}
@@ -673,7 +915,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     ))}
                   </div>
 
-                  {/* Action Buttons in Edit Mode */}
                   <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-800">
                     <button
                       type="button"
@@ -738,9 +979,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
           </div>
         ) : (
-          /* NOT LOGGED IN: TAB 1 (TEAM LEADER LOGIN) OR TAB 2 (ORGANIZER) */
+          /* ================================================================ */
+          /* NOT LOGGED IN: TAB 1 (LEADER LOGIN) OR TAB 2 (ORGANIZER LOGIN)   */
+          /* ================================================================ */
           <div>
-            {/* TAB 1: TEAM LEADER LOGIN */}
             {activeTab === 'leader' && (
               <div className="max-w-md mx-auto animate-in fade-in">
                 <div className="p-3.5 rounded-2xl bg-purple-950/50 border border-purple-800/60 mb-6 text-xs text-purple-200 flex items-start gap-2.5">
@@ -798,116 +1040,101 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       </>
                     ) : (
                       <>
-                        <Lock className="w-4 h-4" />
-                        <span>Sign In as Team Leader</span>
+                        <span>Sign In to Team Dashboard</span>
+                        <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
                 </form>
 
-                <div className="mt-6 pt-4 border-t border-slate-800/80 text-center space-y-2">
-                  <p className="text-xs text-slate-400">
-                    Haven't registered your hackathon team yet?{' '}
-                    <button
-                      type="button"
-                      onClick={onNavigateToRegister}
-                      className="text-cyan-300 font-bold hover:underline"
-                    >
-                      Register Your Team Now &rarr;
-                    </button>
+                <div className="mt-8 text-center border-t border-slate-800 pt-5">
+                  <p className="text-xs text-slate-400 mb-3">
+                    Haven't registered your hackathon team yet?
                   </p>
+                  <button
+                    type="button"
+                    onClick={onNavigateToRegister}
+                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 font-display flex items-center justify-center gap-1.5 mx-auto transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Register New Team for BlockNova 2026</span>
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* TAB 2: ORGANIZER ACCESS */}
             {activeTab === 'admin' && (
-              <div className="max-w-md mx-auto space-y-6 animate-in fade-in">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-950/80 border border-purple-600/50 flex items-center justify-center mx-auto mb-3 text-purple-300 shadow-glow-purple">
-                    <KeyRound className="w-6 h-6" />
+              <div className="max-w-md mx-auto animate-in fade-in">
+                <div className="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-800/80 mb-6 text-xs text-purple-200 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block mb-0.5">Vardhaman College Organizer Gate</span>
+                    Authorized access for reviewing team dossiers, adjusting problem limits, and releasing tracks.
                   </div>
-                  <h3 className="font-display font-bold text-xl text-white mb-1">
-                    Organizer Portal Access
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Authorized access for Vardhaman College & Algorand Club admins.
-                  </p>
                 </div>
 
-                {isAdminAuthenticated ? (
-                  <div className="space-y-4 text-center">
-                    <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-700/60 text-emerald-200 text-xs">
-                      Organizer session is active.
-                    </div>
-                    <button
-                      type="button"
-                      onClick={onNavigateToAdmin}
-                      className="w-full py-3 px-4 rounded-xl cyber-gradient-btn text-white font-display font-bold text-xs flex items-center justify-center gap-2 shadow-glow-purple"
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Go to Admin Dashboard</span>
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleAdminSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Organizer Email
-                      </label>
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Organizer Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                       <input
                         type="email"
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 focus:outline-none font-mono"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                       />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Organizer Passcode
-                      </label>
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Organizer Passcode
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                       <input
                         type="password"
+                        required
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
-                        placeholder="Enter passcode..."
-                        className="w-full px-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none font-mono"
+                        placeholder="Enter organizer passcode..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                       />
                     </div>
+                  </div>
 
-                    <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400">
-                      <span className="text-purple-300 font-bold block mb-0.5">Demo Passcode:</span>
-                      <code className="text-cyan-300 font-mono bg-slate-950 px-1.5 py-0.5 rounded mr-2">blocknova2026</code>
-                      or <code className="text-cyan-300 font-mono bg-slate-950 px-1.5 py-0.5 rounded ml-1">admin123</code>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full py-3 px-4 rounded-xl cyber-gradient-btn text-white font-display font-bold text-xs flex items-center justify-center gap-2 shadow-glow-purple"
-                    >
-                      <Lock className="w-4 h-4" />
-                      <span>Authenticate to Admin Dashboard</span>
-                    </button>
-                  </form>
-                )}
+                  <button
+                    type="submit"
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-display font-bold text-xs flex items-center justify-center gap-2 shadow-glow-purple transition-all mt-6"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Access Executive Admin Portal</span>
+                  </button>
+                </form>
               </div>
             )}
           </div>
         )}
 
-        {/* Back Link */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
-          <button
-            type="button"
-            onClick={onBackToHome}
-            className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Public Website</span>
-          </button>
-        </div>
       </div>
+
+      {/* Problem Specs Detail Modal */}
+      {selectedModalProblem && (
+        <ProblemModal
+          problem={selectedModalProblem}
+          onClose={() => setSelectedModalProblem(null)}
+          onSelectForRegistration={(psId) => {
+            if (loggedInTeam) {
+              handleSelectPS(psId);
+            }
+            setSelectedModalProblem(null);
+          }}
+        />
+      )}
+
     </div>
   );
 };

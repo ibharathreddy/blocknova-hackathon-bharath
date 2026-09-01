@@ -52,7 +52,8 @@ export interface RegistrationData {
 export interface ProblemStatement {
   psId: string;
   title: string;
-  category: 'Blockchain' | 'AI' | 'Cybersecurity' | 'FinTech' | 'Web3' | 'Open Innovation' | string;
+  category: 'Standard Entry Projects' | 'Composite Entry Projects' | string;
+  trackType?: 'Standard' | 'Composite';
   shortDescription: string;
   fullDescription: string;
   expectedOutcome: string;
@@ -61,8 +62,10 @@ export interface ProblemStatement {
   suggestedTech: string[];
   evaluationCriteria: string;
   isActive: boolean;
+  isReleased?: boolean;
   order?: number;
   difficulty?: 'Easy' | 'Medium' | 'Hard' | 'Advanced';
+  maxTeams?: number; // Maximum number of teams that can select this problem statement (e.g. 5)
 }
 
 export interface Sponsor {

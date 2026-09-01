@@ -189,6 +189,43 @@ export async function fetchRegistrationByIdFromFirestore(registrationId: string)
 }
 
 // -------------------------------------------------------------
+// FIRESTORE SYSTEM CONFIG (PROBLEM STATEMENTS RELEASE & LIMITS)
+// -------------------------------------------------------------
+const SYSTEM_CONFIG_COLLECTION = 'system_config';
+const PS_CONFIG_DOC = 'problem_statements_config';
+
+export async function savePSConfigToFirestore(config: { isPSReleased?: boolean; problemStatements?: any[] }): Promise<void> {
+  try {
+    const docRef = doc(db, SYSTEM_CONFIG_COLLECTION, PS_CONFIG_DOC);
+    await setDoc(docRef, config, { merge: true });
+  } catch (error) {
+    console.warn('Could not save PS config to Firestore:', error);
+  }
+}
+
+export function subscribeToPSConfigFirestore(
+  onData: (data: { isPSReleased?: boolean; problemStatements?: any[] }) => void
+) {
+  try {
+    const docRef = doc(db, SYSTEM_CONFIG_COLLECTION, PS_CONFIG_DOC);
+    return onSnapshot(
+      docRef,
+      (snap) => {
+        if (snap.exists()) {
+          onData(snap.data() as any);
+        }
+      },
+      (err) => {
+        console.warn('Firestore PS config subscription notice:', err);
+      }
+    );
+  } catch (error) {
+    console.warn('Could not subscribe to PS config in Firestore:', error);
+    return () => {};
+  }
+}
+
+// -------------------------------------------------------------
 // FIREBASE AUTHENTICATION HELPERS
 // -------------------------------------------------------------
 

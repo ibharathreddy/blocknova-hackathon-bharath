@@ -8,6 +8,8 @@ import {
   subscribeToRegistrationsFirestore,
   updateRegistrationStatusInFirestore,
   deleteRegistrationFromFirestore,
+  savePSConfigToFirestore,
+  subscribeToPSConfigFirestore,
   firebaseSignIn,
   firebaseSignUp,
   firebaseSignOut,
@@ -24,6 +26,18 @@ interface SubmitRegistrationPayload {
   members: RegistrationData['members'];
   problemStatementId?: string;
   projectIdea?: string;
+}
+
+export interface PSSelectionStats {
+  psId: string;
+  title: string;
+  category: string;
+  count: number;
+  maxTeams: number;
+  isFull: boolean;
+  remaining: number;
+  percentage: number;
+  teams: RegistrationData[];
 }
 
 interface RegistrationContextType {
@@ -47,6 +61,15 @@ interface RegistrationContextType {
   selectedPSForRegistration: string | null;
   setSelectedPSForRegistration: (psId: string | null) => void;
   
+  // Problem Statement Release & Limit Management
+  isPSReleased: boolean;
+  setMasterPSReleased: (released: boolean) => void;
+  updateProblemStatementLimit: (psId: string, maxTeams: number) => void;
+  toggleProblemStatementRelease: (psId: string, isReleased?: boolean) => void;
+  selectTeamProblemStatement: (registrationId: string, psId: string) => Promise<{ success: boolean; error?: string }>;
+  getPSSelectionStats: (psId: string) => PSSelectionStats;
+  getAllPSSelectionStats: () => PSSelectionStats[];
+
   // Team Leader & Firebase Auth States
   loggedInTeam: RegistrationData | null;
   currentUser: UserAuthProfile | null;
@@ -65,6 +88,8 @@ const RegistrationContext = createContext<RegistrationContextType | undefined>(u
 const STORAGE_KEY = 'blocknova_2026_registrations';
 const ADMIN_AUTH_KEY = 'blocknova_2026_admin_auth';
 const TEAM_AUTH_KEY = 'blocknova_2026_team_auth';
+const PS_RELEASED_KEY = 'blocknova_2026_ps_released';
+const PS_STORAGE_KEY = 'blocknova_2026_problem_statements';
 
 export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [registrations, setRegistrations] = useState<RegistrationData[]>(() => {
@@ -79,7 +104,45 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return INITIAL_REGISTRATIONS;
   });
 
-  const [problemStatements] = useState<ProblemStatement[]>(PROBLEM_STATEMENTS);
+  // Problem Statements List with persistent overrides (limits / release flags)
+  const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>(() => {
+    try {
+      const saved = localStorage.getItem(PS_STORAGE_KEY);
+      if (saved) {
+        const parsed: ProblemStatement[] = JSON.parse(saved);
+        // Merge with current default PROBLEM_STATEMENTS in case schema updated
+        return PROBLEM_STATEMENTS.map(defaultPS => {
+          const match = parsed.find(p => p.psId === defaultPS.psId);
+          if (match) {
+            return {
+              ...defaultPS,
+              maxTeams: match.maxTeams !== undefined ? match.maxTeams : defaultPS.maxTeams,
+              isReleased: match.isReleased !== undefined ? match.isReleased : defaultPS.isReleased,
+              isActive: match.isActive !== undefined ? match.isActive : defaultPS.isActive
+            };
+          }
+          return defaultPS;
+        });
+      }
+    } catch (e) {
+      console.error('Failed to load problem statements from storage', e);
+    }
+    return PROBLEM_STATEMENTS;
+  });
+
+  // Master Problem Statement Release Switch (default: false / locked until Admin unlocks/releases it)
+  const [isPSReleased, setIsPSReleased] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(PS_RELEASED_KEY);
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  });
+
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedProblemStatement, setSelectedProblemStatement] = useState<ProblemStatement | null>(null);
   const [selectedPSForRegistration, setSelectedPSForRegistration] = useState<string | null>(null);
@@ -149,12 +212,9 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       (firestoreRegistrations) => {
         setIsFirebaseSyncing(false);
         if (firestoreRegistrations && firestoreRegistrations.length > 0) {
-          // Merge firestore registrations with any local defaults
           setRegistrations((prevLocal) => {
             const combinedMap = new Map<string, RegistrationData>();
-            // Add existing local registrations first
             prevLocal.forEach((r) => combinedMap.set(r.registrationId, r));
-            // Overwrite with Firestore live registrations
             firestoreRegistrations.forEach((r) => combinedMap.set(r.registrationId, r));
             const merged = Array.from(combinedMap.values()).sort(
               (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -162,7 +222,6 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             return merged;
           });
 
-          // Also keep loggedInTeam state updated if current team changed in Firestore
           setLoggedInTeam((current) => {
             if (!current) return null;
             const updated = firestoreRegistrations.find(r => r.registrationId === current.registrationId);
@@ -188,8 +247,195 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [registrations]);
 
+  // 4. Save problem statements overrides
+  useEffect(() => {
+    try {
+      localStorage.setItem(PS_STORAGE_KEY, JSON.stringify(problemStatements));
+    } catch (e) {
+      console.error('Failed to save problem statements to storage', e);
+    }
+  }, [problemStatements]);
+
+  // 5. Save PS release status
+  useEffect(() => {
+    try {
+      localStorage.setItem(PS_RELEASED_KEY, String(isPSReleased));
+    } catch (e) {
+      console.error('Failed to save ps released state to storage', e);
+    }
+  }, [isPSReleased]);
+
+  // 6. Cross-tab & Firestore real-time sync for PS release status & limits
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === PS_RELEASED_KEY && e.newValue !== null) {
+        setIsPSReleased(e.newValue === 'true');
+      }
+      if (e.key === PS_STORAGE_KEY && e.newValue !== null) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setProblemStatements(parsed);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    const unsubscribePSConfig = subscribeToPSConfigFirestore((config) => {
+      if (config) {
+        if (config.isPSReleased !== undefined) {
+          setIsPSReleased(Boolean(config.isPSReleased));
+          try {
+            localStorage.setItem(PS_RELEASED_KEY, String(config.isPSReleased));
+          } catch {}
+        }
+        if (config.problemStatements && Array.isArray(config.problemStatements)) {
+          setProblemStatements(config.problemStatements);
+          try {
+            localStorage.setItem(PS_STORAGE_KEY, JSON.stringify(config.problemStatements));
+          } catch {}
+        }
+      }
+    });
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      unsubscribePSConfig();
+    };
+  }, []);
+
   const checkTeamNameAvailable = (name: string, excludeId?: string): boolean => {
     return !isTeamNameTaken(name, registrations, excludeId);
+  };
+
+  // Problem Statement Helper Functions
+  const setMasterPSReleased = (released: boolean) => {
+    setIsPSReleased(released);
+    try {
+      localStorage.setItem(PS_RELEASED_KEY, String(released));
+    } catch (e) {
+      console.error('Failed to save ps released state to storage', e);
+    }
+    savePSConfigToFirestore({ isPSReleased: released });
+  };
+
+  const updateProblemStatementLimit = (psId: string, maxTeams: number) => {
+    const validLimit = Math.max(1, Math.min(100, Math.floor(maxTeams) || 1));
+    setProblemStatements(prev => {
+      const updated = prev.map(ps => (ps.psId === psId ? { ...ps, maxTeams: validLimit } : ps));
+      savePSConfigToFirestore({ problemStatements: updated });
+      return updated;
+    });
+  };
+
+  const toggleProblemStatementRelease = (psId: string, isReleased?: boolean) => {
+    setProblemStatements(prev =>
+      prev.map(ps => {
+        if (ps.psId === psId) {
+          const nextVal = isReleased !== undefined ? isReleased : !ps.isReleased;
+          return { ...ps, isReleased: nextVal, isActive: nextVal };
+        }
+        return ps;
+      })
+    );
+  };
+
+  const getPSSelectionStats = (psId: string): PSSelectionStats => {
+    const ps = problemStatements.find(p => p.psId === psId);
+    const maxTeams = ps?.maxTeams ?? 5;
+    const teams = registrations.filter(r => r.problemStatementId === psId);
+    const count = teams.length;
+    const isFull = count >= maxTeams;
+    const remaining = Math.max(0, maxTeams - count);
+    const percentage = Math.min(100, Math.round((count / maxTeams) * 100));
+
+    return {
+      psId,
+      title: ps?.title || psId,
+      category: ps?.category || 'Standard Entry Projects',
+      count,
+      maxTeams,
+      isFull,
+      remaining,
+      percentage,
+      teams
+    };
+  };
+
+  const getAllPSSelectionStats = (): PSSelectionStats[] => {
+    return problemStatements.map(ps => getPSSelectionStats(ps.psId));
+  };
+
+  const selectTeamProblemStatement = async (
+    registrationId: string,
+    psId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!isPSReleased) {
+      return {
+        success: false,
+        error: 'Problem statements have not been released by organizers yet.'
+      };
+    }
+
+    const ps = problemStatements.find(p => p.psId === psId);
+    if (!ps) {
+      return { success: false, error: `Problem Statement ${psId} not found.` };
+    }
+
+    if (ps.isReleased === false || ps.isActive === false) {
+      return {
+        success: false,
+        error: `Problem Statement ${psId} is currently not open for selection.`
+      };
+    }
+
+    const currentReg = registrations.find(r => r.registrationId === registrationId);
+    if (!currentReg) {
+      return { success: false, error: 'Team registration record not found.' };
+    }
+
+    // If team already has this PS selected, it is fine
+    if (currentReg.problemStatementId === psId) {
+      return { success: true };
+    }
+
+    // Check slot limit
+    const stats = getPSSelectionStats(psId);
+    if (stats.count >= stats.maxTeams) {
+      return {
+        success: false,
+        error: `Slot full for ${ps.title} (${stats.count}/${stats.maxTeams} teams registered). Please select another problem statement.`
+      };
+    }
+
+    const now = new Date().toISOString();
+    const updatedReg: RegistrationData = {
+      ...currentReg,
+      problemStatementId: psId,
+      updatedAt: now
+    };
+
+    // Update local state
+    setRegistrations(prev =>
+      prev.map(r => (r.registrationId === registrationId ? updatedReg : r))
+    );
+
+    if (loggedInTeam?.registrationId === registrationId) {
+      setLoggedInTeam(updatedReg);
+    }
+
+    // Save to Firestore
+    try {
+      setIsFirebaseSyncing(true);
+      await saveRegistrationToFirestore(updatedReg);
+    } catch (err) {
+      console.warn('Firestore update failed, updated locally:', err);
+    } finally {
+      setIsFirebaseSyncing(false);
+    }
+
+    return { success: true };
   };
 
   // Team Leader Login: Email = Team Leader Email, Password = Team Leader Name
@@ -253,7 +499,19 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
     }
 
-    // 3. Generate sequential ID
+    // 3. If a problem statement is selected, check capacity
+    const targetPsId = payload.problemStatementId || selectedPSForRegistration || undefined;
+    if (targetPsId) {
+      const stats = getPSSelectionStats(targetPsId);
+      if (stats.count >= stats.maxTeams) {
+        return {
+          success: false,
+          error: `Selected Problem Statement ${targetPsId} has reached its maximum quota of ${stats.maxTeams} teams. Please pick another track or leave open.`
+        };
+      }
+    }
+
+    // 4. Generate sequential ID
     const newId = generateRegistrationId(registrations.length);
     const now = new Date().toISOString();
 
@@ -281,7 +539,7 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         department: m.department.trim(),
         email: m.email?.trim().toLowerCase()
       })),
-      problemStatementId: payload.problemStatementId || selectedPSForRegistration || undefined,
+      problemStatementId: targetPsId,
       projectIdea: payload.projectIdea?.trim(),
       createdAt: now,
       updatedAt: now
@@ -366,7 +624,6 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateTeamRegistration = async (updatedReg: RegistrationData): Promise<{ success: boolean; error?: string }> => {
-    // 1. Validate team size (min 2, max 4 members total including Leader)
     if (updatedReg.teamSize < 2 || updatedReg.teamSize > 4) {
       return {
         success: false,
@@ -374,7 +631,6 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
     }
 
-    // 2. Validate members count matches teamSize - 1
     const expectedMembersCount = updatedReg.teamSize - 1;
     if (updatedReg.members.length !== expectedMembersCount) {
       return {
@@ -383,7 +639,6 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
     }
 
-    // 3. Validate member details
     for (let i = 0; i < updatedReg.members.length; i++) {
       const m = updatedReg.members[i];
       if (!m.name.trim()) {
@@ -411,13 +666,11 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       updatedAt: now
     };
 
-    // Update in local state
     setRegistrations(prev => prev.map(r => r.registrationId === finalReg.registrationId ? finalReg : r));
     if (loggedInTeam?.registrationId === finalReg.registrationId) {
       setLoggedInTeam(finalReg);
     }
 
-    // Update in Firebase Firestore
     try {
       setIsFirebaseSyncing(true);
       await saveRegistrationToFirestore(finalReg);
@@ -508,6 +761,13 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         logoutAdmin,
         selectedPSForRegistration,
         setSelectedPSForRegistration,
+        isPSReleased,
+        setMasterPSReleased,
+        updateProblemStatementLimit,
+        toggleProblemStatementRelease,
+        selectTeamProblemStatement,
+        getPSSelectionStats,
+        getAllPSSelectionStats,
         loggedInTeam,
         currentUser,
         authLoading,

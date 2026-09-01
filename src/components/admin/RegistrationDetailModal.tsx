@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { RegistrationData, RegistrationStatus } from '../../types';
 import { downloadRegistrationPassPDF } from '../../utils/validation';
+import { useRegistration } from '../../context/RegistrationContext';
 
 interface RegistrationDetailModalProps {
   registration: RegistrationData | null;
@@ -28,6 +29,9 @@ export const RegistrationDetailModal: React.FC<RegistrationDetailModalProps> = (
   onUpdateStatus,
   onDelete
 }) => {
+  const { problemStatements } = useRegistration();
+  const matchedPS = problemStatements.find(p => p.psId === registration?.problemStatementId);
+
   if (!registration) return null;
 
   const [adminNotes, setAdminNotes] = useState<string>(registration.adminNotes || '');
@@ -152,14 +156,27 @@ export const RegistrationDetailModal: React.FC<RegistrationDetailModalProps> = (
           </div>
 
           {/* Problem Statement & Concept */}
-          <div className="glass-card rounded-2xl p-4 border border-slate-800 text-xs">
-            <div className="flex items-center gap-2 mb-2">
-              <FileCode className="w-4 h-4 text-purple-400" />
-              <strong className="text-purple-300 font-mono uppercase">Problem Statement & Track</strong>
+          <div className="glass-card rounded-2xl p-4 border border-slate-800 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-purple-400" />
+                <strong className="text-purple-300 font-mono uppercase">Problem Statement & Track</strong>
+              </div>
+              {matchedPS && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-950/80 border border-purple-800 text-purple-300">
+                  {matchedPS.category}
+                </span>
+              )}
             </div>
-            <div className="mb-2">
-              <span className="text-slate-400 font-mono">Track: </span>
-              <span className="text-cyan-300 font-semibold">{registration.problemStatementId || 'Open Track / General'}</span>
+            <div>
+              <span className="text-slate-400 font-mono">Enrolled Challenge: </span>
+              {registration.problemStatementId ? (
+                <span className="text-cyan-300 font-semibold font-mono">
+                  {registration.problemStatementId} {matchedPS ? `— ${matchedPS.title}` : ''}
+                </span>
+              ) : (
+                <span className="text-slate-500 font-mono">Open Track / Not Selected</span>
+              )}
             </div>
             {registration.projectIdea && (
               <p className="text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800 italic">

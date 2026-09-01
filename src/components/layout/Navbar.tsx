@@ -24,7 +24,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentView, setCurrentView, onNavigateSection }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdminAuthenticated, currentUser, loggedInTeam } = useRegistration();
+  const { isAdminAuthenticated, currentUser, loggedInTeam, isPSReleased } = useRegistration();
 
   useEffect(() => {
     const handleScroll = () => {

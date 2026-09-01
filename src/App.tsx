@@ -17,7 +17,7 @@ import { AppView } from './types';
 
 function MainApp() {
   const [currentView, setCurrentView] = useState<AppView>('home');
-  const { isAdminAuthenticated } = useRegistration();
+  const { isAdminAuthenticated, isPSReleased, setSelectedPSForRegistration } = useRegistration();
 
   // Sync route hashes (e.g. #register, #login, #admin, #about, #schedule, #faq)
   useEffect(() => {
@@ -33,6 +33,12 @@ function MainApp() {
         setCurrentView('schedule');
       } else if (hash === 'faq') {
         setCurrentView('faq');
+      } else if (hash === 'problem-statements') {
+        setCurrentView('home');
+        setTimeout(() => {
+          const el = document.getElementById('problem-statements');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       } else if (hash === 'admin') {
         setCurrentView(isAdminAuthenticated ? 'admin' : 'admin-login');
       } else if (hash) {
@@ -85,11 +91,24 @@ function MainApp() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onExplorePSClick={() => {
-                setCurrentView('about');
+                scrollToSection('problem-statements');
+              }}
+            />
+            <ProblemStatements
+              onRegisterClick={() => {
+                setCurrentView('register');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onScheduleClick={() => {
+                setCurrentView('schedule');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onSelectPSForRegistration={(psId) => {
+                setSelectedPSForRegistration(psId);
+                setCurrentView('register');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-            <ProblemStatements />
             <PrizesSection />
             <SponsorsSection />
           </div>

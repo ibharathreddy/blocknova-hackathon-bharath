@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Users, AlertCircle, CheckCircle2, Layers, Lock, Unlock } from 'lucide-react';
 import { TeamSize } from '../../types';
 import { useRegistration } from '../../context/RegistrationContext';
 
@@ -15,7 +15,7 @@ interface StepTeamProps {
 }
 
 export const StepTeam: React.FC<StepTeamProps> = ({ formData, updateFormData, errors }) => {
-  const { problemStatements, checkTeamNameAvailable } = useRegistration();
+  const { problemStatements, isPSReleased, getPSSelectionStats, checkTeamNameAvailable } = useRegistration();
 
   const isNameAvailable = formData.teamName.trim().length >= 2 
     ? checkTeamNameAvailable(formData.teamName) 
@@ -26,10 +26,10 @@ export const StepTeam: React.FC<StepTeamProps> = ({ formData, updateFormData, er
       <div className="border-b border-slate-800 pb-4">
         <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
           <Users className="w-5 h-5 text-cyan-400" />
-          <span>Step 2: Team Identity & Size</span>
+          <span>Step 2: Team Identity & Challenge Track</span>
         </h3>
         <p className="text-xs text-slate-400 mt-1">
-          Pick a memorable team name and configure your team size (2 to 4 members). Problem statement selection will be done on-site on Sep 18.
+          Pick a memorable team name, configure your team size (2 to 4 members), and choose your problem statement track.
         </p>
         <div className="mt-3 p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-800/60 text-cyan-300 text-xs flex items-center gap-2 font-mono">
           <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
@@ -82,7 +82,7 @@ export const StepTeam: React.FC<StepTeamProps> = ({ formData, updateFormData, er
             </p>
           ) : (
             <p className="text-[11px] text-slate-500 mt-1">
-              Must be 2–40 characters and unique.
+              Must be 2–40 characters and unique across all institutions.
             </p>
           )}
         </div>
@@ -121,6 +121,56 @@ export const StepTeam: React.FC<StepTeamProps> = ({ formData, updateFormData, er
             The form dynamically updates team member fields according to your chosen size.
           </p>
         </div>
+
+        {/* Problem Statement Track Selection Field (Only shown when released by Admin) */}
+        {isPSReleased && (
+          <div>
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              Select Problem Statement Track
+            </label>
+
+            <div className="space-y-2">
+              <select
+                value={formData.problemStatementId}
+                onChange={(e) => updateFormData({ problemStatementId: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-slate-100 focus:outline-none cursor-pointer"
+              >
+                <option value="">Open Track (Decide Later / General)</option>
+                <optgroup label="Standard Entry Projects">
+                  {problemStatements.filter(p => p.category === 'Standard Entry Projects').map((ps) => {
+                    const stats = getPSSelectionStats(ps.psId);
+                    const isFull = stats.isFull && formData.problemStatementId !== ps.psId;
+                    return (
+                      <option key={ps.psId} value={ps.psId} disabled={isFull}>
+                        {ps.psId}: {ps.title} ({stats.remaining} slots remaining){isFull ? ' - FULL' : ''}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+                <optgroup label="Composite Entry Projects">
+                  {problemStatements.filter(p => p.category === 'Composite Entry Projects').map((ps) => {
+                    const stats = getPSSelectionStats(ps.psId);
+                    const isFull = stats.isFull && formData.problemStatementId !== ps.psId;
+                    return (
+                      <option key={ps.psId} value={ps.psId} disabled={isFull}>
+                        {ps.psId}: {ps.title} ({stats.remaining} slots remaining){isFull ? ' - FULL' : ''}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              </select>
+              <p className="text-[11px] text-slate-400 font-mono">
+                {formData.problemStatementId ? (
+                  <span className="text-cyan-300">
+                    Selected: {formData.problemStatementId} ({problemStatements.find(p => p.psId === formData.problemStatementId)?.title})
+                  </span>
+                ) : (
+                  <span>You can also select or change your track anytime from your Team Leader dashboard after registering.</span>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
