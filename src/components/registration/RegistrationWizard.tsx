@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { TeamSize, TeamLeader, TeamMember } from '../../types';
-import { isValidEmail, isValidPhone, isValidRollNumber } from '../../utils/validation';
+import { isValidEmail, isValidPhone, isValidRollNumber, isRollNumberRegistered } from '../../utils/validation';
 import { StepCollege } from './StepCollege';
 import { StepTeam } from './StepTeam';
 import { StepLeader } from './StepLeader';
@@ -27,6 +27,7 @@ interface RegistrationWizardProps {
 
 export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackToHome }) => {
   const { 
+    registrations,
     submitRegistration, 
     checkTeamNameAvailable, 
     selectedPSForRegistration,
@@ -106,6 +107,11 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackTo
       }
       if (!isValidRollNumber(formData.teamLeader.rollNumber)) {
         newErrors['leader.rollNumber'] = 'Valid roll number is required.';
+      } else {
+        const check = isRollNumberRegistered(formData.teamLeader.rollNumber, registrations);
+        if (check.isDuplicate) {
+          newErrors['leader.rollNumber'] = `Roll number is already registered under team "${check.registeredTeam}".`;
+        }
       }
       if (!formData.teamLeader.department.trim()) {
         newErrors['leader.department'] = 'Department is required.';
@@ -120,6 +126,12 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackTo
 
     if (currentStep === 4) {
       const neededCount = formData.teamSize - 1;
+      const seenRolls = new Set<string>();
+      const leaderRoll = formData.teamLeader.rollNumber.trim().toUpperCase();
+      if (leaderRoll) {
+        seenRolls.add(leaderRoll);
+      }
+
       for (let i = 0; i < neededCount; i++) {
         const m = formData.members[i];
         if (!m || !m.name.trim()) {
@@ -127,6 +139,19 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackTo
         }
         if (!m || !isValidRollNumber(m.rollNumber)) {
           newErrors[`member.${i}.rollNumber`] = `Member ${i + 1} roll number is required.`;
+        } else {
+          const mRoll = m.rollNumber.trim().toUpperCase();
+          if (mRoll === leaderRoll) {
+            newErrors[`member.${i}.rollNumber`] = `Roll number cannot match the Team Leader's roll number.`;
+          } else if (seenRolls.has(mRoll)) {
+            newErrors[`member.${i}.rollNumber`] = `Duplicate roll number within the same team.`;
+          } else {
+            seenRolls.add(mRoll);
+            const check = isRollNumberRegistered(m.rollNumber, registrations);
+            if (check.isDuplicate) {
+              newErrors[`member.${i}.rollNumber`] = `Roll number is already registered under team "${check.registeredTeam}".`;
+            }
+          }
         }
         if (!m || !m.department.trim()) {
           newErrors[`member.${i}.department`] = `Member ${i + 1} department is required.`;

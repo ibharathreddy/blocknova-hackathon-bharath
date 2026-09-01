@@ -19,15 +19,22 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigateSection, setCurrentView }) => {
-  const quickLinks = [
+  const navLinks = [
     { label: 'Home', sectionId: 'hero', view: 'home' as AppView },
     { label: 'About BlockNova', sectionId: 'about', view: 'about' as AppView },
     { label: 'Schedule & Timeline', sectionId: 'schedule', view: 'schedule' as AppView },
     { label: 'Prizes & Rewards', sectionId: 'prizes', view: 'home' as AppView },
-    { label: 'FAQ', sectionId: 'faq', view: 'faq' as AppView },
+    { label: 'Frequently Asked Questions', sectionId: 'faq', view: 'faq' as AppView },
   ];
 
-  const handleLink = (link: typeof quickLinks[0]) => {
+  const eventInfoLinks = [
+    { label: 'Problem Statements', sectionId: 'problem-statements', view: 'home' as AppView },
+    { label: 'Rules & Eligibility', sectionId: 'about', view: 'about' as AppView },
+    { label: 'Timeline & Milestones', sectionId: 'schedule', view: 'schedule' as AppView },
+    { label: 'Title Sponsor (Algorand)', sectionId: 'sponsors', view: 'home' as AppView },
+  ];
+
+  const handleLink = (link: { label: string; sectionId: string; view: AppView }) => {
     if (link.view !== 'home') {
       setCurrentView(link.view);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -118,7 +125,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateSection, setCurrentVie
               Navigation
             </h3>
             <ul className="space-y-2 text-sm">
-              {quickLinks.slice(0, 5).map(link => (
+              {navLinks.map(link => (
                 <li key={link.label}>
                   <button
                     onClick={() => handleLink(link)}
@@ -138,7 +145,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateSection, setCurrentVie
               Event Info
             </h3>
             <ul className="space-y-2 text-sm">
-              {quickLinks.slice(5).map(link => (
+              {eventInfoLinks.map(link => (
                 <li key={link.label}>
                   <button
                     onClick={() => handleLink(link)}

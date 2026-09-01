@@ -67,6 +67,7 @@ interface RegistrationContextType {
   updateProblemStatementLimit: (psId: string, maxTeams: number) => void;
   toggleProblemStatementRelease: (psId: string, isReleased?: boolean) => void;
   selectTeamProblemStatement: (registrationId: string, psId: string) => Promise<{ success: boolean; error?: string }>;
+  unassignTeamProblemStatement: (registrationId: string) => Promise<{ success: boolean; error?: string }>;
   getPSSelectionStats: (psId: string) => PSSelectionStats;
   getAllPSSelectionStats: () => PSSelectionStats[];
 
@@ -168,19 +169,23 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return null;
   });
 
-  // Admin Auth State
+  // Admin Auth State (uses sessionStorage so auth does not persist across new browser sessions or pulls)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+      // Clean up legacy persistent localStorage key if present
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+      return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
     } catch {
       return false;
     }
   });
 
   const [adminUser, setAdminUser] = useState<{ email: string; role: 'superadmin' | 'reviewer' } | null>(() => {
-    if (localStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
-      return { email: 'admin@vardhaman.org', role: 'superadmin' };
-    }
+    try {
+      if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+        return { email: 'admin@vardhaman.org', role: 'superadmin' };
+      }
+    } catch {}
     return null;
   });
 
@@ -438,6 +443,41 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return { success: true };
   };
 
+  const unassignTeamProblemStatement = async (
+    registrationId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const currentReg = registrations.find(r => r.registrationId === registrationId);
+    if (!currentReg) {
+      return { success: false, error: 'Registration record not found.' };
+    }
+
+    const now = new Date().toISOString();
+    const updatedReg: RegistrationData = {
+      ...currentReg,
+      problemStatementId: undefined,
+      updatedAt: now
+    };
+
+    setRegistrations(prev =>
+      prev.map(r => (r.registrationId === registrationId ? updatedReg : r))
+    );
+
+    if (loggedInTeam?.registrationId === registrationId) {
+      setLoggedInTeam(updatedReg);
+    }
+
+    try {
+      setIsFirebaseSyncing(true);
+      await saveRegistrationToFirestore(updatedReg);
+    } catch (err) {
+      console.warn('Firestore unassign failed, updated locally:', err);
+    } finally {
+      setIsFirebaseSyncing(false);
+    }
+
+    return { success: true };
+  };
+
   // Team Leader Login: Email = Team Leader Email, Password = Team Leader Name
   const loginTeamLeader = (email: string, leaderNamePassword: string): { success: boolean; team?: RegistrationData; error?: string } => {
     const cleanEmail = email.trim().toLowerCase();
@@ -511,8 +551,8 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     }
 
-    // 4. Generate sequential ID
-    const newId = generateRegistrationId(registrations.length);
+    // 4. Generate sequential ID safely avoiding collisions
+    const newId = generateRegistrationId(registrations);
     const now = new Date().toISOString();
 
     const newRegistration: RegistrationData = {
@@ -727,7 +767,12 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (password === 'blocknova2026' || password === 'admin123' || password === 'algorand2026') {
       setIsAdminAuthenticated(true);
       setAdminUser({ email, role: 'superadmin' });
-      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      try {
+        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        localStorage.removeItem(ADMIN_AUTH_KEY);
+      } catch (e) {
+        console.warn('Failed to save admin session', e);
+      }
       return true;
     }
     return false;
@@ -736,7 +781,12 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const logoutAdmin = () => {
     setIsAdminAuthenticated(false);
     setAdminUser(null);
-    localStorage.removeItem(ADMIN_AUTH_KEY);
+    try {
+      sessionStorage.removeItem(ADMIN_AUTH_KEY);
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+    } catch (e) {
+      console.warn('Failed to clear admin session', e);
+    }
   };
 
   return (
@@ -766,6 +816,7 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         updateProblemStatementLimit,
         toggleProblemStatementRelease,
         selectTeamProblemStatement,
+        unassignTeamProblemStatement,
         getPSSelectionStats,
         getAllPSSelectionStats,
         loggedInTeam,

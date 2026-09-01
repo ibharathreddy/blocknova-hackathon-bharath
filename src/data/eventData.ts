@@ -89,7 +89,7 @@ export const TIMELINE_PHASES: TimelineEvent[] = [
     phase: 7,
     title: 'Grand Valedictory & Prize Distribution',
     time: 'Sep 19, 06:00 PM – 07:30 PM',
-    description: 'Announcement of ₹1,00,000+ prize winners, track bounties, and distribution of official certificates.',
+    description: 'Announcement of ₹10,000+ prize winners, track bounties, and distribution of official certificates.',
     tag: 'Finale',
     iconName: 'Trophy'
   }
@@ -296,8 +296,8 @@ export const FAQ_DATA: FAQItem[] = [
   {
     id: 'faq-5',
     category: 'Registration',
-    question: 'Can I change my team members after submitting registration?',
-    answer: 'If you need to make critical changes (e.g. member substitution), please reach out to the organizing team via email at blocknova@vardhaman.org with your Registration ID before the registration deadline of September 15, 2026.'
+    question: 'Can I change my team members or track after submitting registration?',
+    answer: 'Yes! Team leaders can log in to the Team Leader Portal anytime using their registered email and name to edit team members, adjust team size (2 to 4), or update their selected problem statement track.'
   },
   {
     id: 'faq-6',

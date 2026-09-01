@@ -19,9 +19,27 @@ export const isValidRollNumber = (roll: string): boolean => {
   return typeof roll === 'string' && roll.trim().length >= 3;
 };
 
-// Format sequential registration ID e.g., BNH26-0001
-export const generateRegistrationId = (currentCount: number): string => {
-  const nextNum = currentCount + 1;
+// Format sequential registration ID e.g., BNH26-0001 (safely scans existing IDs to prevent collisions)
+export const generateRegistrationId = (source: RegistrationData[] | number): string => {
+  if (typeof source === 'number') {
+    const nextNum = Math.max(1, source + 1);
+    const padded = String(nextNum).padStart(4, '0');
+    return `BNH26-${padded}`;
+  }
+
+  let maxId = 0;
+  if (Array.isArray(source)) {
+    for (const reg of source) {
+      if (reg.registrationId && reg.registrationId.startsWith('BNH26-')) {
+        const numPart = parseInt(reg.registrationId.replace('BNH26-', ''), 10);
+        if (!isNaN(numPart) && numPart > maxId) {
+          maxId = numPart;
+        }
+      }
+    }
+  }
+
+  const nextNum = Math.max(maxId + 1, (Array.isArray(source) ? source.length : 0) + 1);
   const padded = String(nextNum).padStart(4, '0');
   return `BNH26-${padded}`;
 };
@@ -45,13 +63,15 @@ export const isRollNumberRegistered = (
   currentRegId?: string
 ): { isDuplicate: boolean; registeredTeam?: string } => {
   const normalized = rollNumber.trim().toUpperCase();
+  if (!normalized) return { isDuplicate: false };
+
   for (const reg of existingRegistrations) {
     if (reg.registrationId === currentRegId) continue;
-    if (reg.teamLeader.rollNumber.trim().toUpperCase() === normalized) {
+    if (reg.teamLeader.rollNumber?.trim().toUpperCase() === normalized) {
       return { isDuplicate: true, registeredTeam: reg.teamName };
     }
     for (const m of reg.members) {
-      if (m.rollNumber.trim().toUpperCase() === normalized) {
+      if (m.rollNumber?.trim().toUpperCase() === normalized) {
         return { isDuplicate: true, registeredTeam: reg.teamName };
       }
     }
@@ -99,16 +119,17 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     doc.text(registration.registrationId, 105, 80, { align: 'center' });
 
     // Team Summary Table
-    let y = 98;
-    doc.setFontSize(11);
+    let y = 96;
+    doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
 
-    const addRow = (label: string, value: string) => {
+    const addRow = (label: string, value: string, maxWidth: number = 115) => {
       doc.setFont('helvetica', 'bold');
       doc.text(label, 20, y);
       doc.setFont('helvetica', 'normal');
-      doc.text(value, 75, y);
-      y += 8;
+      const lines = doc.splitTextToSize(value || 'N/A', maxWidth);
+      doc.text(lines, 75, y);
+      y += Math.max(7, lines.length * 5 + 2);
     };
 
     addRow('Team Name:', registration.teamName);
@@ -119,39 +140,41 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     addRow('Registration Date:', new Date(registration.createdAt).toLocaleString('en-IN'));
 
     // Divider line
-    y += 4;
+    y += 2;
     doc.setDrawColor(226, 232, 240);
     doc.line(15, y, 195, y);
-    y += 10;
+    y += 8;
 
     // Team Leader Section
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
     doc.text('Team Leader Details', 20, y);
-    y += 7;
+    y += 6;
 
     doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
     addRow('Name & Year:', `${registration.teamLeader.name} (${registration.teamLeader.year})`);
     addRow('Roll Number:', registration.teamLeader.rollNumber);
     addRow('Branch / Dept:', registration.teamLeader.department || 'Not specified');
     addRow('Email & Phone:', `${registration.teamLeader.email} | ${registration.teamLeader.phone}`);
 
     // Members Section
-    y += 4;
+    y += 2;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
     doc.text(`Team Members (${registration.members.length})`, 20, y);
-    y += 7;
+    y += 6;
 
     doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
     registration.members.forEach((m, idx) => {
       addRow(`Member ${idx + 1}:`, `${m.name} | ${m.year} | Roll: ${m.rollNumber} | Dept: ${m.department || 'N/A'}`);
     });
 
     // Venue & Instructions Box
-    y += 6;
+    y += 4;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(15, y, 180, 36, 2, 2, 'FD');
@@ -168,7 +191,8 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     doc.text('4. For queries, contact Algorand Blockchain Club at indlabharath999@gmail.com or +91 7997885525.', 20, y + 32);
 
     // Save PDF
-    doc.save(`BlockNova_Registration_${registration.registrationId}_${registration.teamName.replace(/\s+/g, '_')}.pdf`);
+    const safeTeamName = (registration.teamName || 'Team').replace(/[^a-zA-Z0-9_-]/g, '_');
+    doc.save(`BlockNova_Registration_${registration.registrationId}_${safeTeamName}.pdf`);
   } catch (error) {
     console.error('Error generating PDF pass:', error);
     // Fallback to window print
