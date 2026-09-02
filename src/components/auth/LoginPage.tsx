@@ -30,13 +30,17 @@ import {
   FileText,
   HelpCircle,
   ExternalLink,
-  Zap
+  Zap,
+  Eye,
+  EyeOff,
+  MessageCircle
 } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
-import { downloadRegistrationPassPDF } from '../../utils/validation';
+import { downloadRegistrationPassPDF, isRollNumberRegistered } from '../../utils/validation';
 import { RegistrationData, TeamMember, TeamSize, ProblemStatement } from '../../types';
 import { ProblemModal } from '../ui/ProblemModal';
 import { CATEGORIES } from '../../data/problemStatements';
+import { EVENT_CONFIG } from '../../data/eventData';
 
 interface LoginPageProps {
   onBackToHome: () => void;
@@ -66,6 +70,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateToAdmin
 }) => {
   const {
+    registrations,
     loggedInTeam,
     loginTeamLeader,
     logoutTeamLeader,
@@ -76,6 +81,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     problemStatements,
     isPSReleased,
     selectTeamProblemStatement,
+    unassignTeamProblemStatement,
     getPSSelectionStats
   } = useRegistration();
 
@@ -84,10 +90,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   // Team Leader Login Form
   const [leaderEmail, setLeaderEmail] = useState('');
   const [leaderNamePassword, setLeaderNamePassword] = useState('');
+  const [showLeaderPassword, setShowLeaderPassword] = useState(false);
 
   // Admin Form
   const [adminPassword, setAdminPassword] = useState('');
-  const [adminEmail, setAdminEmail] = useState('admin@vardhaman.org');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   // Team Edit State
   const [isEditingTeam, setIsEditingTeam] = useState(false);
@@ -113,6 +121,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setEditMembers([...loggedInTeam.members]);
     }
   }, [loggedInTeam]);
+
+  // Reset inputs when switching tabs or mounting to prevent unwanted autofill
+  useEffect(() => {
+    setLeaderEmail('');
+    setLeaderNamePassword('');
+    setAdminEmail('');
+    setAdminPassword('');
+    clearMessages();
+  }, [activeTab]);
 
   const clearMessages = () => {
     setErrorMsg(null);
@@ -159,7 +176,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     if (ok) {
       onNavigateToAdmin();
     } else {
-      setErrorMsg('Invalid organizer passcode. Demo passcodes: "blocknova2026" or "admin123"');
+      setErrorMsg('Invalid organizer passcode. Please check credentials and try again.');
     }
   };
 
@@ -247,6 +264,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       return;
     }
 
+    const seenRolls = new Set<string>();
+    const leaderRoll = loggedInTeam.teamLeader.rollNumber?.trim().toUpperCase();
+    if (leaderRoll) {
+      seenRolls.add(leaderRoll);
+    }
+
     for (let i = 0; i < editMembers.length; i++) {
       const m = editMembers[i];
       if (!m.name.trim()) {
@@ -257,6 +280,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         setErrorMsg(`Member #${i + 1} roll number is required.`);
         return;
       }
+      const mRoll = m.rollNumber.trim().toUpperCase();
+      if (mRoll === leaderRoll) {
+        setErrorMsg(`Member #${i + 1} roll number cannot be the same as the Team Leader's roll number.`);
+        return;
+      }
+      if (seenRolls.has(mRoll)) {
+        setErrorMsg(`Duplicate roll number "${mRoll}" detected within the team.`);
+        return;
+      }
+      seenRolls.add(mRoll);
+
+      const rollCheck = isRollNumberRegistered(m.rollNumber, registrations, loggedInTeam.registrationId);
+      if (rollCheck.isDuplicate) {
+        setErrorMsg(`Roll number "${mRoll}" is already registered under another team ("${rollCheck.registeredTeam}").`);
+        return;
+      }
+
       if (!m.department.trim()) {
         setErrorMsg(`Member #${i + 1} department is required.`);
         return;
@@ -305,6 +345,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setSuccessMsg(`🎉 Track selected successfully! Team "${loggedInTeam.teamName}" is now registered for "${psId}: ${psMatch?.title}".`);
     } else {
       setErrorMsg(res.error || 'Failed to select problem statement.');
+    }
+  };
+
+  // Handle Team Problem Statement Track Unassignment
+  const handleUnassignPS = async () => {
+    if (!loggedInTeam || !loggedInTeam.problemStatementId) return;
+    clearMessages();
+
+    setIsEnrollingPS(true);
+    const res = await unassignTeamProblemStatement(loggedInTeam.registrationId);
+    setIsEnrollingPS(false);
+
+    if (res.success) {
+      setSuccessMsg(`Team "${loggedInTeam.teamName}" has been reverted to Open Track.`);
+    } else {
+      setErrorMsg(res.error || 'Failed to unassign track.');
     }
   };
 
@@ -528,6 +584,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Official Hackers WhatsApp Group Invite */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-900/90 to-teal-950/70 border border-emerald-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 text-emerald-400">
+                  <MessageCircle className="w-5 h-5 fill-emerald-500/20" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-white flex items-center gap-2">
+                    <span>BlockNova Hacker WhatsApp Group</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                      OFFICIAL
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-300">
+                    Join for real-time hackathon announcements, track release alerts, and mentor checkpoints.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={EVENT_CONFIG.whatsappGroup}
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-display font-bold text-xs flex items-center gap-1.5 shadow-glow-teal transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+                <span>Join WhatsApp Group</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
 
             {/* ================================================================ */}
@@ -993,16 +1080,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   </div>
                 </div>
 
-                <form onSubmit={handleLeaderSubmit} className="space-y-4">
+                <form
+                  onSubmit={handleLeaderSubmit}
+                  className="space-y-4"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                >
+                  {/* Invisible decoy inputs to absorb browser password autofill */}
+                  <input
+                    type="text"
+                    name="prevent_autofill_username_decoy"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="off"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+                  <input
+                    type="password"
+                    name="prevent_autofill_password_decoy"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="off"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                       Team Leader Email
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                       <input
                         type="email"
                         required
+                        name="bn_leader_email_val"
+                        id="bn_leader_email_val"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
+                        readOnly
+                        onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                        onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
                         value={leaderEmail}
                         onChange={(e) => setLeaderEmail(e.target.value)}
                         placeholder="e.g. leader@vardhaman.org"
@@ -1016,15 +1139,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       Password (Team Leader Name)
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                       <input
-                        type="password"
+                        type={showLeaderPassword ? 'text' : 'password'}
                         required
+                        name="bn_leader_name_pass"
+                        id="bn_leader_name_pass"
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
+                        readOnly
+                        onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                        onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
                         value={leaderNamePassword}
                         onChange={(e) => setLeaderNamePassword(e.target.value)}
                         placeholder="Enter Team Leader Full Name..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowLeaderPassword(!showLeaderPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                        title={showLeaderPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showLeaderPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -1073,17 +1214,54 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   </div>
                 </div>
 
-                <form onSubmit={handleAdminSubmit} className="space-y-4">
+                <form
+                  onSubmit={handleAdminSubmit}
+                  className="space-y-4"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                >
+                  {/* Invisible decoy inputs to absorb browser password autofill */}
+                  <input
+                    type="text"
+                    name="prevent_autofill_admin_decoy"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="off"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+                  <input
+                    type="password"
+                    name="prevent_autofill_admin_pwd_decoy"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="off"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                       Organizer Email
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                       <input
                         type="email"
+                        name="bn_admin_gate_email"
+                        id="bn_admin_gate_email"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
+                        readOnly
+                        onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                        onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="e.g. admin@vardhaman.org"
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                       />
                     </div>
@@ -1094,15 +1272,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       Organizer Passcode
                     </label>
                     <div className="relative">
-                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                       <input
-                        type="password"
+                        type={showAdminPassword ? 'text' : 'password'}
                         required
+                        name="bn_admin_gate_passcode"
+                        id="bn_admin_gate_passcode"
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
+                        readOnly
+                        onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                        onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         placeholder="Enter organizer passcode..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                        title={showAdminPassword ? 'Hide passcode' : 'Show passcode'}
+                      >
+                        {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 

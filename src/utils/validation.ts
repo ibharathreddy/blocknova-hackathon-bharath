@@ -3,15 +3,20 @@ import jsPDF from 'jspdf';
 
 // Email regex validation
 export const isValidEmail = (email: string): boolean => {
+  if (!email || typeof email !== 'string') return false;
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(String(email).trim().toLowerCase());
 };
 
-// Phone validation (10 digits minimum, optional +91 or country code)
+// Phone validation (strictly numeric with optional country code, 10 to 15 digits)
 export const isValidPhone = (phone: string): boolean => {
-  const cleaned = phone.replace(/[\s\-()]/g, '');
-  const re = /^(\+?\d{1,3})?[6-9]\d{9}$/;
-  return re.test(cleaned) || cleaned.length >= 10;
+  if (!phone || typeof phone !== 'string') return false;
+  const cleaned = phone.replace(/[\s\-().+]/g, '');
+  // Must only contain digits now
+  if (!/^\d+$/.test(cleaned)) return false;
+  // Standard Indian mobile number (10 digits starting with 6-9, or with country code 91)
+  const indianMobile = /^(\+?91)?[6-9]\d{9}$/.test(phone.replace(/[\s\-()]/g, ''));
+  return indianMobile || (cleaned.length >= 10 && cleaned.length <= 15);
 };
 
 // Roll number check (min 3 chars)
@@ -30,7 +35,7 @@ export const generateRegistrationId = (source: RegistrationData[] | number): str
   let maxId = 0;
   if (Array.isArray(source)) {
     for (const reg of source) {
-      if (reg.registrationId && reg.registrationId.startsWith('BNH26-')) {
+      if (reg && reg.registrationId && reg.registrationId.startsWith('BNH26-')) {
         const numPart = parseInt(reg.registrationId.replace('BNH26-', ''), 10);
         if (!isNaN(numPart) && numPart > maxId) {
           maxId = numPart;
@@ -44,16 +49,19 @@ export const generateRegistrationId = (source: RegistrationData[] | number): str
   return `BNH26-${padded}`;
 };
 
-// Check if team name already exists (case-insensitive)
+// Check if team name already exists (case-insensitive & whitespace trimmed)
 export const isTeamNameTaken = (
   teamName: string,
   existingRegistrations: RegistrationData[],
   currentRegId?: string
 ): boolean => {
+  if (!teamName || typeof teamName !== 'string') return false;
   const normalized = teamName.trim().toLowerCase();
-  return existingRegistrations.some(
-    (reg) => reg.teamNameLower === normalized && reg.registrationId !== currentRegId
-  );
+  return existingRegistrations.some((reg) => {
+    if (!reg || reg.registrationId === currentRegId) return false;
+    const existingNameLower = (reg.teamNameLower || reg.teamName || '').trim().toLowerCase();
+    return existingNameLower === normalized;
+  });
 };
 
 // Check if a roll number is already registered across any team
@@ -62,17 +70,20 @@ export const isRollNumberRegistered = (
   existingRegistrations: RegistrationData[],
   currentRegId?: string
 ): { isDuplicate: boolean; registeredTeam?: string } => {
+  if (!rollNumber || typeof rollNumber !== 'string') return { isDuplicate: false };
   const normalized = rollNumber.trim().toUpperCase();
   if (!normalized) return { isDuplicate: false };
 
   for (const reg of existingRegistrations) {
-    if (reg.registrationId === currentRegId) continue;
-    if (reg.teamLeader.rollNumber?.trim().toUpperCase() === normalized) {
+    if (!reg || reg.registrationId === currentRegId) continue;
+    if (reg.teamLeader?.rollNumber?.trim().toUpperCase() === normalized) {
       return { isDuplicate: true, registeredTeam: reg.teamName };
     }
-    for (const m of reg.members) {
-      if (m.rollNumber?.trim().toUpperCase() === normalized) {
-        return { isDuplicate: true, registeredTeam: reg.teamName };
+    if (Array.isArray(reg.members)) {
+      for (const m of reg.members) {
+        if (m?.rollNumber?.trim().toUpperCase() === normalized) {
+          return { isDuplicate: true, registeredTeam: reg.teamName };
+        }
       }
     }
   }
@@ -137,7 +148,8 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     addRow('Location:', `${registration.collegeCity || 'Hyderabad'}, ${registration.collegeState || 'Telangana'}`);
     addRow('Total Team Size:', `${registration.teamSize} Members`);
     addRow('Selected Problem Statement:', registration.problemStatementId || 'Open Track / To be finalized');
-    addRow('Registration Date:', new Date(registration.createdAt).toLocaleString('en-IN'));
+    const validDate = registration.createdAt ? new Date(registration.createdAt) : new Date();
+    addRow('Registration Date:', isNaN(validDate.getTime()) ? new Date().toLocaleString('en-IN') : validDate.toLocaleString('en-IN'));
 
     // Divider line
     y += 2;
@@ -164,14 +176,16 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(30, 58, 138);
-    doc.text(`Team Members (${registration.members.length})`, 20, y);
+    doc.text(`Team Members (${registration.members ? registration.members.length : 0})`, 20, y);
     y += 6;
 
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
-    registration.members.forEach((m, idx) => {
-      addRow(`Member ${idx + 1}:`, `${m.name} | ${m.year} | Roll: ${m.rollNumber} | Dept: ${m.department || 'N/A'}`);
-    });
+    if (Array.isArray(registration.members)) {
+      registration.members.forEach((m, idx) => {
+        addRow(`Member ${idx + 1}:`, `${m.name} | ${m.year} | Roll: ${m.rollNumber} | Dept: ${m.department || 'N/A'}`);
+      });
+    }
 
     // Venue & Instructions Box
     y += 4;
@@ -187,7 +201,7 @@ export const downloadRegistrationPassPDF = (registration: RegistrationData) => {
     doc.setFontSize(8);
     doc.text('1. Please carry this pass and your official college student ID card during on-campus check-in.', 20, y + 14);
     doc.text('2. Venue: Vardhaman College of Engineering, Kacharam, Shamshabad, Hyderabad - 501218.', 20, y + 20);
-    doc.text('3. Reporting Time: Sep 18, 2026 at 09:00 AM IST and No accommodation  and No food provided.', 20, y + 26);
+    doc.text('3. Reporting Time: Sep 18, 2026 at 09:00 AM IST. Note: No accommodation and no food provided.', 20, y + 26);
     doc.text('4. For queries, contact Algorand Blockchain Club at indlabharath999@gmail.com or +91 7997885525.', 20, y + 32);
 
     // Save PDF

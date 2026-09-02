@@ -35,7 +35,7 @@ export const StepMembers: React.FC<StepMembersProps> = ({ formData, updateFormDa
         name: '',
         year: '3rd Year',
         rollNumber: '',
-        department: '',
+        department: 'Computer Science and Engineering (CSE)',
         email: ''
       });
     }
@@ -72,7 +72,7 @@ export const StepMembers: React.FC<StepMembersProps> = ({ formData, updateFormDa
             name: '',
             year: '3rd Year',
             rollNumber: '',
-            department: '',
+            department: 'Computer Science and Engineering (CSE)',
             email: ''
           };
 

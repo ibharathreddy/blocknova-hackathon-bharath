@@ -158,7 +158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToHome }) 
         `"${m2.rollNumber || ''}"`,
         `"${m3.name || ''}"`,
         `"${m3.rollNumber || ''}"`,
-        `"${new Date(r.createdAt).toLocaleString('en-IN')}"`
+        `"${r.createdAt ? new Date(r.createdAt).toLocaleString('en-IN') : 'N/A'}"`
       ].join(',');
     });
 
@@ -219,7 +219,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToHome }) 
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <div className="text-xs font-bold text-slate-200">{adminUser?.email || 'admin@vardhaman.org'}</div>
+            <div className="text-xs font-bold text-slate-200">{adminUser?.email}</div>
             <div className="text-[11px] font-mono text-cyan-400">Super Administrator</div>
           </div>
 

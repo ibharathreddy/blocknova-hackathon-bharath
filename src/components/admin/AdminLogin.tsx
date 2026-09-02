@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Lock, ShieldCheck, ArrowLeft, KeyRound, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 
 interface AdminLoginProps {
@@ -9,23 +9,29 @@ interface AdminLoginProps {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToHome }) => {
   const { loginAdmin } = useRegistration();
-  const [email, setEmail] = useState('blockchain@vardhaman.org');
-  const [password, setPassword] = useState('blocknova2028');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
-      setError('Please enter the admin passcode.');
+      setError('Please enter the organizer passcode.');
       return;
     }
 
-    const success = loginAdmin(password, email);
+    const success = loginAdmin(password, email || 'admin@vardhaman.org');
     if (success) {
       setError(null);
       onLoginSuccess();
     } else {
-      setError('Invalid admin credentials. Use demo passcode');
+      setError('Invalid organizer credentials. Please verify your passcode and try again.');
     }
   };
 
@@ -49,16 +55,53 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+        >
+          {/* Invisible decoy inputs to absorb browser password autofill */}
+          <input
+            type="text"
+            name="prevent_autofill_admin_decoy"
+            tabIndex={-1}
+            aria-hidden="true"
+            autoComplete="off"
+            style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+          />
+          <input
+            type="password"
+            name="prevent_autofill_admin_pwd_decoy"
+            tabIndex={-1}
+            aria-hidden="true"
+            autoComplete="off"
+            style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+          />
+
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1">
               Admin Email
             </label>
             <input
               type="email"
+              name="bn_admin_email_field"
+              id="bn_admin_email_field"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              readOnly
+              onFocus={(e) => { e.currentTarget.readOnly = false; }}
+              onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 focus:outline-none font-mono"
+              placeholder="e.g. admin@vardhaman.org"
+              className="w-full px-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none font-mono"
             />
           </div>
 
@@ -66,20 +109,33 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1">
               Passcode
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter passcode..."
-              className="w-full px-4 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none font-mono"
-            />
-          </div>
-
-          {/* Quick Demo Credentials Help */}
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400">
-            <span className="text-purple-300 font-bold block mb-0.5">Demo Passcode:</span>
-            <code className="text-cyan-300 font-mono bg-slate-950 px-1.5 py-0.5 rounded mr-2">blocknova2026</code>
-            or <code className="text-cyan-300 font-mono bg-slate-950 px-1.5 py-0.5 rounded ml-1">admin123</code>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="bn_admin_passcode_field"
+                id="bn_admin_passcode_field"
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
+                readOnly
+                onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                onPointerDown={(e) => { e.currentTarget.readOnly = false; }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter passcode..."
+                className="w-full pl-4 pr-10 py-2.5 bg-slate-900/90 border border-slate-800 focus:border-purple-500 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                title={showPassword ? 'Hide passcode' : 'Show passcode'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button

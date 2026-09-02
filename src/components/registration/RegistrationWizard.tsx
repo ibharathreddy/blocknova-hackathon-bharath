@@ -66,6 +66,13 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackTo
     ] as TeamMember[]
   });
 
+  // Sync problem statement selection if user selected it externally
+  React.useEffect(() => {
+    if (selectedPSForRegistration) {
+      setFormData(prev => ({ ...prev, problemStatementId: selectedPSForRegistration }));
+    }
+  }, [selectedPSForRegistration]);
+
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
     setGeneralError(null);
@@ -297,7 +304,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({ onBackTo
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           {currentStep === 1 && (
             <StepCollege
               formData={formData}

@@ -101,21 +101,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, setCurrentView, onN
 
           {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-1 xl:gap-2">
-            {navItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => handleNavClick(item.sectionId, item.view)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentView === item.view && item.view !== 'home'
-                    ? 'text-cyan-300 bg-cyan-950/40 border border-cyan-800/40'
-                    : currentView === 'home'
-                    ? 'text-slate-300 hover:text-white hover:bg-white/5'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const isActive = (currentView === item.view && item.view !== 'home') || (currentView === 'home' && item.sectionId === 'hero');
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => handleNavClick(item.sectionId, item.view)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'text-cyan-300 bg-cyan-950/40 border border-cyan-800/40'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
 
             {isAdminAuthenticated && (
               <button

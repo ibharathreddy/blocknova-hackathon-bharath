@@ -41,12 +41,17 @@ function MainApp() {
         }, 100);
       } else if (hash === 'admin') {
         setCurrentView(isAdminAuthenticated ? 'admin' : 'admin-login');
+      } else if (hash === 'hero' || hash === 'home') {
+        setCurrentView('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (hash) {
         setCurrentView('home');
         setTimeout(() => {
           const el = document.getElementById(hash);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }, 100);
+      } else {
+        setCurrentView('home');
       }
     };
 

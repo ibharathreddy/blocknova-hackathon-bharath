@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RegistrationData, RegistrationStatus, ProblemStatement, TeamSize, UserAuthProfile } from '../types';
 import { INITIAL_REGISTRATIONS } from '../data/mockRegistrations';
 import { PROBLEM_STATEMENTS } from '../data/problemStatements';
-import { generateRegistrationId, isTeamNameTaken } from '../utils/validation';
+import { generateRegistrationId, isTeamNameTaken, isRollNumberRegistered } from '../utils/validation';
 import {
   saveRegistrationToFirestore,
   subscribeToRegistrationsFirestore,
@@ -336,15 +336,17 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const toggleProblemStatementRelease = (psId: string, isReleased?: boolean) => {
-    setProblemStatements(prev =>
-      prev.map(ps => {
+    setProblemStatements(prev => {
+      const updated = prev.map(ps => {
         if (ps.psId === psId) {
           const nextVal = isReleased !== undefined ? isReleased : !ps.isReleased;
           return { ...ps, isReleased: nextVal, isActive: nextVal };
         }
         return ps;
-      })
-    );
+      });
+      savePSConfigToFirestore({ problemStatements: updated });
+      return updated;
+    });
   };
 
   const getPSSelectionStats = (psId: string): PSSelectionStats => {
@@ -691,6 +693,13 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!m.rollNumber.trim()) {
         return { success: false, error: `Member #${i + 1} roll number cannot be empty.` };
       }
+      const duplicateCheck = isRollNumberRegistered(m.rollNumber, registrations, updatedReg.registrationId);
+      if (duplicateCheck.isDuplicate) {
+        return {
+          success: false,
+          error: `Roll number "${m.rollNumber.trim().toUpperCase()}" is already registered under team "${duplicateCheck.registeredTeam}".`
+        };
+      }
       if (!m.department.trim()) {
         return { success: false, error: `Member #${i + 1} department cannot be empty.` };
       }
@@ -768,7 +777,7 @@ export const RegistrationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Admin Login Action
   const loginAdmin = (password: string, email: string = 'admin@vardhaman.org'): boolean => {
-    if (password === 'blocknova2026' || password === 'admin123' || password === 'algorand2026') {
+    if (password && password.trim() === 'blocknova2028') {
       setIsAdminAuthenticated(true);
       setAdminUser({ email, role: 'superadmin' });
       try {

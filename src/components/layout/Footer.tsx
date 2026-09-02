@@ -8,7 +8,8 @@ import {
   Twitter,
   Instagram,
   ExternalLink,
-  Heart
+  Heart,
+  MessageCircle
 } from 'lucide-react';
 import { EVENT_CONFIG } from '../../data/eventData';
 import { AppView } from '../../types';
@@ -114,6 +115,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateSection, setCurrentVie
                 aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />
+              </a>
+              <a
+                href={EVENT_CONFIG.socialLinks.whatsapp}
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
+                aria-label="WhatsApp Community"
+                title="Join Hackers WhatsApp Group"
+              >
+                <MessageCircle className="w-4 h-4" />
               </a>
             </div>
           </div>

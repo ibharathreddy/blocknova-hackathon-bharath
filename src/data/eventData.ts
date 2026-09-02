@@ -27,12 +27,14 @@ export const EVENT_CONFIG = {
   venueAddress: 'Kacharam, Shamshabad, Hyderabad, Telangana 501218',
   contactEmail: 'indlabharath999@gmail.com',
   contactPhone: '+91 7997885525',
+  whatsappGroup: 'https://chat.whatsapp.com/E7YGVNKMgG452D0VkVmOI0?s=sh&p=a&mlu=4&ilr=4',
   socialLinks: {
     instagram: 'https://instagram.com/algorand_vce',
     linkedin: 'https://linkedin.com/school/vardhaman-college-of-engineering',
     x: 'https://x.com/Algorand',
     github: 'https://github.com/algorand-blockchain-club',
-    discord: 'https://discord.gg/algorand'
+    discord: 'https://discord.gg/algorand',
+    whatsapp: 'https://chat.whatsapp.com/E7YGVNKMgG452D0VkVmOI0?s=sh&p=a&mlu=4&ilr=4'
   }
 };
 
