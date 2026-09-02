@@ -6,8 +6,8 @@ import {
 import { SPONSORS_DATA } from '../../data/eventData';
 
 const AlgorandLogo: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
-  <svg className={className} viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M137.6 448L320 128h-70.4L67.2 448h70.4zm166.4-166.4L435.2 448h70.4L374.4 281.6h-70.4zM320 64l64 128h70.4L390.4 64H320z" />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M13.874 0h3.673l1.61 5.963h3.789l-2.588 4.5 3.624 13.533h-3.757l-2.44-9.077-5.247 9.079H8.345l8.107-14.051-1.304-4.878L4.215 24H.018Z" />
   </svg>
 );
 
@@ -42,8 +42,8 @@ export const SponsorsSection: React.FC = () => {
 
               <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
                 {/* Big Algorand Logo Badge */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white text-black p-4 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                  <AlgorandLogo className="w-full h-full text-black" />
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-black border border-white/20 text-white p-4 sm:p-5 flex items-center justify-center shrink-0 shadow-xl shadow-cyan-500/10 group-hover:scale-105 group-hover:border-cyan-400/60 group-hover:shadow-glow-cyan transition-all duration-300">
+                  <AlgorandLogo className="w-full h-full text-white" />
                 </div>
 
                 <div>
